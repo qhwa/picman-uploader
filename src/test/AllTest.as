@@ -5,5 +5,6 @@ package test
 	public class AllTest
 	{
 		public var readyScreenTest:ReadyScreenTest;
+		public var queueScreenTest:PreviewStatusTest;
 	}
 }

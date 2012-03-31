@@ -4,6 +4,7 @@ target: 10.0
 
 source: 
   - src
+  - /home/qhwa/working-disk/working/Projects/nightly_builder/libraries/ccbu-trunk/
   - /home/qhwa/working-disk/working/Projects/nightly_builder/libraries/vendor/
 
 library: 

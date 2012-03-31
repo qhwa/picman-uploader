@@ -1,17 +1,53 @@
 package 
 {
+	import cn.alibaba.product.uploader.core.File;
+	import cn.alibaba.product.uploader.Uploader;
+
 	public class PicmanUploader
 	{
 		private var _fileCountLimit:uint = 0;
 		private var _state:String;
 		private var _enabled:Boolean;
+		private var _core:Uploader;
 
 		public function PicmanUploader()
 		{
+			_core = new Uploader;
+			_core.init();
 		}
 
 		public function canSelectFile():Boolean {
 			return _enabled && _fileCountLimit > 0;
+		}
+
+		public function addFile( file:File ):void
+		{
+			_core.addFile( file );
+		}
+
+		public function rmFile( file:File ):File
+		{
+			return _core.rmFile( file );
+		}
+
+		public function rotate( id:String ):void
+		{
+			
+		}
+	
+		public function getRotation( id:String ):Number
+		{
+			return 90;
+		}
+		
+		public function previewBeforeUpload():void
+		{
+			state = 'preview';
+		}
+
+		public function get files():Vector.<File>
+		{
+			return _core.files;
 		}
 		
 		/**
@@ -48,9 +84,7 @@ package
 		public function set state(value:String):void {
 			_state = value;
 		}
-		
-		
-		
+
 	}
 
 
