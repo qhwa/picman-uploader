@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+    xmlns:ali="*"
+	>
+
+    <ali:PicmanUploader width="484" height="484" />
+    <btn:GoldenButton>
+ 
+</mx:Application>

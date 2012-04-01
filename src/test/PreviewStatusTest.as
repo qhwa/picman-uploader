@@ -21,6 +21,7 @@ package test
 		public function setup():void
 		{
 			uper = new PicmanUploader;
+			uper.initApp();
 		}
 
 		[Test]

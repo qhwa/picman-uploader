@@ -18,6 +18,7 @@ package test
 		public function setup():void
 		{
 			uper = new PicmanUploader;
+			uper.initApp();
 			uper.state = 'ready';
 		}
 
@@ -26,12 +27,11 @@ package test
 		{
 			Assert.assertFalse( uper.canSelectFile() );
 		}
-		
 
 		[Test]
 		public function uninteractive_if_disabled():void
 		{
-			uper.enabled = false;
+			uper.disableUI();
 			Assert.assertFalse( uper.canSelectFile() );
 		}
 
@@ -45,7 +45,7 @@ package test
 		[Test]
 		public function interactive_if_target_album_has_space():void
 		{
-			uper.enabled = true;
+			uper.enableUI();
 			uper.fileCountLimit = 10;
 			Assert.assertEquals( uper.fileCountLimit, 10 );
 			Assert.assertTrue( uper.canSelectFile() );
@@ -55,7 +55,7 @@ package test
 		[Test]
 		public function uninteractive_if_no_space_left_ignoring_album():void
 		{
-			uper.enabled = false;
+			uper.disableUI();
 			uper.fileCountLimit = 10;
 			Assert.assertFalse( uper.canSelectFile() );
 		}

@@ -11,9 +11,11 @@ library:
   - lib
 
 #main: src/cn/alibaba/product/picman/uploader/Main.mxml
-main: src/test/PicmanUploaderTest.mxml
+#main: src/test/PicmanUploaderTest.mxml
+#main: src/PicmanUploader.as
+main: src/PicmanUploaderMain.mxml
 
 output: 
   file: bin/picman-uploader.swf
-  width: 800
-  height: 600
+  width: 484
+  height: 484
