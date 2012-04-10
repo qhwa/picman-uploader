@@ -1,10 +1,240 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mx:Application 
-	xmlns:mx="http://www.adobe.com/2006/mxml"
-    xmlns:ali="*"
-	>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:mx="library://ns.adobe.com/flex/mx"
+               xmlns:s="library://ns.adobe.com/flex/spark" 
+               xmlns:btn="cn.alibaba.common.ui.button.*" 
+			   applicationComplete="initApplication()"
+               >
+	<s:states>
+		<s:State name="ready"/>
+		<s:State name="queue"/>
+		<s:State name="uploading"/>
+		<s:State name="result"/>
+	</s:states>
 
-    <ali:PicmanUploader width="484" height="484" />
-    <btn:GoldenButton>
+	<s:layout>
+		<s:VerticalLayout
+			paddingLeft="8" paddingTop="8"
+			paddingRight="8" paddingBottom="8"
+			verticalAlign="middle"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		
+		s|Button {
+			skinClass: ClassReference("cn.alibaba.common.ui.button.SimpleSilverButton");
+		}
+		
+		s|Button:disabled {
+			color: #BBBBBB;
+		}
+		
+		s|Button.silver {
+			skinClass: ClassReference("cn.alibaba.common.ui.button.SilverButton");
+			color: #333333;
+			fontFamily: 微软雅黑, 宋体;
+			fontWeight: bold;
+		}	
+		
+		/** Silver 一级银色 **/
+		
+		s|Button.silver:over {
+			color: #934002;
+		}
+		
+		s|Button.silver:disabled {
+			color: #BBBBBB;
+		}
+		
+		/** Golden 一级金色 **/
+		s|Button.golden {
+			skinClass: ClassReference("cn.alibaba.common.ui.button.GoldenButton");
+		}
+		
+		/** Simple Blue **/
+		s|Button.simpleBlue {
+			color: #FFFFFF;
+			skinClass: ClassReference("cn.alibaba.common.ui.button.SimpleBlueButton");
+		}
+		s|Button.simpleBlue:disabled {
+			color: #BBBBBB;
+		}
+		
+		/** Simple Golden **/
+		/* 这个项目没有用到 */
+		/*
+		s|Button.simpleGolden {
+			skinClass: ClassReference("cn.alibaba.common.ui.button.SimpleGoldenButton");
+		}
+		s|Button.simpleGolden:up {
+			color: #934002;
+		}
+		s|Button.simpleGolden:over {
+			color: #333333;
+		}
+		*/
+
+        #fileList {
+            borderVisible : false;
+        }
+		
+	</fx:Style>
+
+    <fx:Script><![CDATA[
+
+        import cn.alibaba.product.uploader.core.File;
+        import flash.events.Event;
+        import mx.collections.ArrayCollection;
+
+        private var core:PicmanUploader;
+        private var _targetAlbum:Object = {};
+
+        private function initApplication():void
+        {
+            core = new PicmanUploader();
+            core.visible = false;
+            stage.addChild(core);
+
+            core.setBrowseFilter(buildFileFilter({
+                '图片' : ['jpg', 'jpeg', 'png', 'gif', 'bmp']
+            }));
+            core.addEventListener('fileSelect', onSelectFiles);
+            core.addEventListener('finish', onUploadFinish);
+        }
+
+        private function buildFileFilter(obj:Object):Array
+        {
+            var ret:Array = [];
+            for( var each:String in obj ){
+                var exts:Array = obj[each];
+                ret.push( toFilter( { name: each, exts: exts } ));
+
+                for each( var ext:String in exts ) {
+                    ret.push( toFilter({ name: each, exts: [ext] }));
+                }
+            }
+            return ret;
+
+            function toFilter( obj:Object ):Object {
+                var extNames:String = obj.exts.map(nameToExtMap).join('; ');
+                return {
+                    description: [obj.name, '(', extNames, ')'].join(' '),
+                    extensions: extNames
+                };
+            }
+
+            function nameToExtMap(value:String, idx:uint, array:Array):*{
+                return '*.' + value;
+            }
+
+        }
+
+        private function onClickSelectBtn(evt:Event=null):void
+        {
+            core.browse();
+        }
+
+        private function onSelectFiles(evt:Event):void
+        {
+            currentState = 'queue';
+            var files:Vector.<File> = core.files;
+            trace(files);
+            var count:int = files.length;
+            queueSumm.text = "您已选中 " + count + " 张图片";
+
+            renderFileList();
+
+        }
+
+        private function renderFileList():void
+        {
+            fileList.dataProvider = new ArrayCollection(toArray(core.files));
+        }
+
+        private function toArray(iterable:*):Array {
+             var ret:Array = [];
+             for each (var elem:* in iterable) ret.push(elem);
+             return ret;
+        }
+
+        public function setTargetAlbum(opt:Object):void
+        {
+            _targetAlbum.id = opt.id;
+            var space:uint = _targetAlbum.space = opt.space;
+            if(space <= 0){
+                albumFullIndicator.visible = true;
+                fsBtn.enabled = false;
+            } else {
+                albumFullIndicator.visible = false;
+                fsBtn.enabled = true;
+            }
+        }
+
+        private function onClickUpBtn(evt:Event=null):void 
+        {
+            core.uploadAll('http://localhost:4567');
+            currentState = 'uploading';
+        }
+
+        private function onUploadFinish(evt:Event):void
+        {
+            currentState = 'result';
+        }
+
+    ]]></fx:Script>
+
+    <s:VGroup includeIn="ready">
+        <s:Label id="albumFullIndicator" color="#FF0000" visible="false">该相册已满，无法继续上传
+    请选择其他相册或新建相册</s:Label>
+
+        <s:Button id="fsBtn"
+            styleName="golden" 
+            label="选择文件并上传" 
+            click="onClickSelectBtn(event)"
+        />
+    </s:VGroup>
+
+    <s:VGroup includeIn="queue,uploading" width="100%" height="100%" verticalAlign="middle">
+        <s:Label id="queueSumm" />
+
+        <s:List id="fileList" width="100%" height="400" itemRenderer="FileItemRenderer">
+            <s:layout>
+                <s:TileLayout />
+            </s:layout>
+        </s:List>
+
+        <s:HGroup width="100%" includeIn="queue">
+            <s:CheckBox label="为上传的图片设置水印"></s:CheckBox>
+            <s:HGroup right="1" horizontalAlign="right" width="100%" verticalAlign="middle">
+
+                <s:Button id="upBtn" styleName="golden" label="开始上传" click="onClickUpBtn(event)" />
+
+                <mx:LinkButton id="selectMoreBtn" label="继续选择" click="onClickSelectBtn(event)" />
+            </s:HGroup>
+        </s:HGroup>
+
+        <s:HGroup width="100%" includeIn="uploading" horizontalAlign="center">
+            <s:Label text="上传中..." />
+        </s:HGroup>
+    </s:VGroup>
+
+    <s:VGroup includeIn="result" width="100%" height="100%">
+        <s:List id="failedFilesList" width="100%" height="400" itemRenderer="FileItemRenderer">
+            <s:layout>
+                <s:TileLayout />
+            </s:layout>
+        </s:List>
+
+        <s:HGroup right="1" horizontalAlign="right" width="100%" verticalAlign="middle">
+
+            <s:Button id="retryBtn" styleName="golden" label="重试"  />
+
+        </s:HGroup>
+
+    </s:VGroup>
  
-</mx:Application>
+</s:Application>

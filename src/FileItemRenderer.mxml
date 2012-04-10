@@ -1,0 +1,54 @@
+<s:ItemRenderer
+    xmlns:fx="http://ns.adobe.com/mxml/2009"
+    xmlns:s="library://ns.adobe.com/flex/spark"
+    xmlns:mx="library://ns.adobe.com/flex/mx"
+    creationComplete="init()"
+    >
+
+    <s:states>
+        <s:State name="normal"/>
+        <s:State name="hovered"/>
+        <s:State name="selected" />
+    </s:states>
+
+    <fx:Script><![CDATA[
+
+		import cn.alibaba.product.uploader.core.File;
+
+        private function init():void
+        {
+            var file:File = data as File;
+            if(file.data === null){
+				file.addEventListener('loaded', onFileDataLoaded);
+                file.load();
+            }
+        }
+
+		private function onFileDataLoaded(evt:Event):void
+		{
+			thumb.source = evt.target.data;
+		}
+
+    ]]></fx:Script>
+    
+    <s:layout>
+        <s:VerticalLayout/>
+    </s:layout>
+
+	<s:BorderContainer borderColor="0xcccccc" width="82" height="82">
+		<s:Image id="thumb" smooth="true" backgroundColor="0xf8fbff" width="80" height="80" horizontalAlign="center" verticalAlign="middle" />
+	</s:BorderContainer>
+    
+    <s:Label text="{data.name}" 
+        width="80" 
+        lineBreak="toFit" 
+        showTruncationTip="true" 
+        maxDisplayedLines="1" 
+
+        color="0x838485" 
+        color.hovered="0x1313cd"
+        color.selected="0x1313cd"
+        textAlign="center" 
+      />
+    
+</s:ItemRenderer>

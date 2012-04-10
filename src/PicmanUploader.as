@@ -1,9 +1,9 @@
 package 
 {
 	import cn.alibaba.product.uploader.core.File;
-	import cn.alibaba.product.uploader.Uploader;
+	import cn.alibaba.product.uploader.AliUploader;
 
-	public class PicmanUploader extends Uploader
+	public class PicmanUploader extends AliUploader
 	{
 		private var _fileCountLimit:uint = 0;
 		private var _state:String;
