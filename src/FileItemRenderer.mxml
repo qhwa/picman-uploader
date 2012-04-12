@@ -3,52 +3,145 @@
     xmlns:s="library://ns.adobe.com/flex/spark"
     xmlns:mx="library://ns.adobe.com/flex/mx"
     creationComplete="init()"
+	dataChange="updateData()"
     >
 
     <s:states>
         <s:State name="normal"/>
         <s:State name="hovered"/>
-        <s:State name="selected" />
+		<s:State name="failed" />
+		<s:State name="uploading" />
     </s:states>
 
     <fx:Script><![CDATA[
 
 		import cn.alibaba.product.uploader.core.File;
+		import flash.events.MouseEvent;
+
+		[Bindable]
+		private var upProgPercent:String = '';
 
         private function init():void
         {
-            var file:File = data as File;
-            if(file.data === null){
-				file.addEventListener('loaded', onFileDataLoaded);
-                file.load();
-            }
+			addEventListener('mouseDown', stopEvt, true);
+			addEventListener('mouseOver', stopEvt, true);
+			addEventListener('rollOver', stopEvt, true);
         }
+
+		private function updateData():void
+		{
+            var file:File = data as File;
+			file.addEventListener('statusChange', onFileStatusChange);
+
+			clearCurrentThumb();
+
+            if(file.loaded){
+				thumb.source = file.getThumbImageData();
+			} else {
+				file.addEventListener('imageReady', onFileDataLoaded);
+                file.load();
+			}
+		}
+
+		private function clearCurrentThumb():void
+		{
+			thumb.source = null;
+		}
+
+		private function stopEvt(evt:Event):void
+		{
+			evt.preventDefault();
+			evt.stopPropagation();
+			evt.stopImmediatePropagation();
+		}
 
 		private function onFileDataLoaded(evt:Event):void
 		{
-			thumb.source = evt.target.data;
+			thumb.source = evt.target.getThumbImageData();
 		}
+
+		private function onFileStatusChange(evt:Event):void
+		{
+            var file:File = data as File;
+
+			var handler:String = 'updateFileStatus_' + file.status.type;
+			try { this[handler](file); }
+			catch (e:Error) {}
+		}
+
+		private function updateFileStatus_cs_processing(file:File):void
+		{
+			currentState = 'uploading';
+			var prog:Number = Number(file.status.data);
+			upProgPercent = Math.floor(prog * 100) + '%';
+			progBar.width = Math.floor(prog * 80);
+			mouseEnabled = false;
+		}
+
+		private function updateFileStatus_transfer_fail(file:File):void
+		{
+			currentState = 'failed';
+		}
+
+		private function onClickRmBtn(evt:Event):void
+		{
+			stopEvt(evt);
+			removeSelf();
+		}
+
+		private function removeSelf():void
+		{
+			dispatchEvent( new Event('remove', true, true) );
+		}
+
 
     ]]></fx:Script>
     
-    <s:layout>
-        <s:VerticalLayout/>
-    </s:layout>
+	<s:VGroup>
+		<s:BorderContainer id="thumbContainer" 
+			width="82" height="82"
+			borderColor="0xcccccc" 
+			borderColor.uploading="0xFF7300" 
+			borderColor.failed="0xFF0000" 
+			>
+			<s:Image id="thumb" smooth="true" 
+				backgroundColor="0xf8fbff" 
+				backgroundColor.failed="#FFF5F5" 
+				width="80" height="80" 
+				horizontalAlign="center" 
+				verticalAlign="middle" />
+		</s:BorderContainer>
+		
+		<s:Label text="{data.name}" 
+			width="80" 
+			lineBreak="toFit" 
+			showTruncationTip="true" 
+			maxDisplayedLines="1" 
 
-	<s:BorderContainer borderColor="0xcccccc" width="82" height="82">
-		<s:Image id="thumb" smooth="true" backgroundColor="0xf8fbff" width="80" height="80" horizontalAlign="center" verticalAlign="middle" />
-	</s:BorderContainer>
-    
-    <s:Label text="{data.name}" 
-        width="80" 
-        lineBreak="toFit" 
-        showTruncationTip="true" 
-        maxDisplayedLines="1" 
+			color="0x838485" 
+			textAlign="center" 
+		  />
+	</s:VGroup>
 
-        color="0x838485" 
-        color.hovered="0x1313cd"
-        color.selected="0x1313cd"
-        textAlign="center" 
-      />
+	<s:Group
+		includeIn="uploading"
+		width="100%" height="20" bottom="18">
+
+		<s:Rect width="100%" height="20" >
+			<s:fill><s:SolidColor color="0xCCCCCC" alpha="0.5" /></s:fill>
+		</s:Rect>
+
+		<s:Rect id="progBar" width="0" height="20" >
+			<s:fill><s:SolidColor color="0x0000FF" alpha="0.5" /></s:fill>
+		</s:Rect>
+
+		<s:Label text="{upProgPercent}" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" />
+	</s:Group>
+
+	<s:Group
+		includeIn="hovered"
+		width="100%" height="20" bottom="20">
+		<s:Button label="删除" click="onClickRmBtn(event)" />
+	</s:Group>
     
 </s:ItemRenderer>

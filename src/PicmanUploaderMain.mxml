@@ -144,7 +144,6 @@
             var files:Vector.<File> = core.files;
             trace(files);
             var count:int = files.length;
-            queueSumm.text = "您已选中 " + count + " 张图片";
 
             renderFileList();
 
@@ -152,7 +151,8 @@
 
         private function renderFileList():void
         {
-            fileList.dataProvider = new ArrayCollection(toArray(core.files));
+            updateFileList();
+            fileList.addEventListener('remove', onRemovingFile);
         }
 
         private function toArray(iterable:*):Array {
@@ -176,6 +176,11 @@
 
         private function onClickUpBtn(evt:Event=null):void 
         {
+            upload();
+        }
+
+        private function upload():void
+        {
             core.uploadAll('http://localhost:4567');
             currentState = 'uploading';
         }
@@ -183,6 +188,33 @@
         private function onUploadFinish(evt:Event):void
         {
             currentState = 'result';
+        }
+
+        private function onRemovingFile(evt:Event):void
+        {
+            trace('rm:', evt.target.data);
+            core.rmFile( evt.target.data );
+            updateFileList();
+        }
+
+        private function updateFileList():void
+        {
+            var col:ArrayCollection = fileList.dataProvider as ArrayCollection;
+            if(col){
+                col.source = toArray(core.files);
+            } else {
+                fileList.dataProvider = new ArrayCollection(toArray(core.files));
+            }
+        }
+
+        private function onClickRetryBtn(evt:Event):void
+        {
+            reuploadFailedFiles();
+        }
+
+        private function reuploadFailedFiles():void
+        {
+            upload();
         }
 
     ]]></fx:Script>
@@ -198,8 +230,9 @@
         />
     </s:VGroup>
 
-    <s:VGroup includeIn="queue,uploading" width="100%" height="100%" verticalAlign="middle">
-        <s:Label id="queueSumm" />
+    <s:VGroup includeIn="queue,uploading,result" width="100%" height="100%" verticalAlign="top">
+
+        <s:Label id="queueSumm" text="{('您已选中 ' + fileList.dataProvider.length + ' 张图片')}" />
 
         <s:List id="fileList" width="100%" height="400" itemRenderer="FileItemRenderer">
             <s:layout>
@@ -209,6 +242,7 @@
 
         <s:HGroup width="100%" includeIn="queue">
             <s:CheckBox label="为上传的图片设置水印"></s:CheckBox>
+            <mx:LinkButton label="水印设置" />
             <s:HGroup right="1" horizontalAlign="right" width="100%" verticalAlign="middle">
 
                 <s:Button id="upBtn" styleName="golden" label="开始上传" click="onClickUpBtn(event)" />
@@ -217,24 +251,13 @@
             </s:HGroup>
         </s:HGroup>
 
-        <s:HGroup width="100%" includeIn="uploading" horizontalAlign="center">
+        <s:HGroup includeIn="uploading" width="100%" horizontalAlign="center">
             <s:Label text="上传中..." />
         </s:HGroup>
-    </s:VGroup>
 
-    <s:VGroup includeIn="result" width="100%" height="100%">
-        <s:List id="failedFilesList" width="100%" height="400" itemRenderer="FileItemRenderer">
-            <s:layout>
-                <s:TileLayout />
-            </s:layout>
-        </s:List>
-
-        <s:HGroup right="1" horizontalAlign="right" width="100%" verticalAlign="middle">
-
-            <s:Button id="retryBtn" styleName="golden" label="重试"  />
-
+        <s:HGroup includeIn="result" width="100%" horizontalAlign="right">
+            <s:Button id="retryBtn" styleName="golden" label="重试" click="onClickRetryBtn(event)" />
         </s:HGroup>
 
     </s:VGroup>
- 
 </s:Application>
