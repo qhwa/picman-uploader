@@ -3,7 +3,7 @@
                xmlns:mx="library://ns.adobe.com/flex/mx"
                xmlns:s="library://ns.adobe.com/flex/spark" 
                xmlns:btn="cn.alibaba.common.ui.button.*" 
-			   applicationComplete="initApplication()"
+			   applicationComplete="init()"
                >
 	<s:states>
 		<s:State name="ready"/>
@@ -25,59 +25,11 @@
 		@namespace s "library://ns.adobe.com/flex/spark";
 		@namespace mx "library://ns.adobe.com/flex/mx";
 		
-		s|Button {
-			skinClass: ClassReference("cn.alibaba.common.ui.button.SimpleSilverButton");
-		}
-		
-		s|Button:disabled {
-			color: #BBBBBB;
-		}
-		
-		s|Button.silver {
-			skinClass: ClassReference("cn.alibaba.common.ui.button.SilverButton");
-			color: #333333;
-			fontFamily: 微软雅黑, 宋体;
-			fontWeight: bold;
-		}	
-		
-		/** Silver 一级银色 **/
-		
-		s|Button.silver:over {
-			color: #934002;
-		}
-		
-		s|Button.silver:disabled {
-			color: #BBBBBB;
-		}
-		
 		/** Golden 一级金色 **/
 		s|Button.golden {
 			skinClass: ClassReference("cn.alibaba.common.ui.button.GoldenButton");
 		}
 		
-		/** Simple Blue **/
-		s|Button.simpleBlue {
-			color: #FFFFFF;
-			skinClass: ClassReference("cn.alibaba.common.ui.button.SimpleBlueButton");
-		}
-		s|Button.simpleBlue:disabled {
-			color: #BBBBBB;
-		}
-		
-		/** Simple Golden **/
-		/* 这个项目没有用到 */
-		/*
-		s|Button.simpleGolden {
-			skinClass: ClassReference("cn.alibaba.common.ui.button.SimpleGoldenButton");
-		}
-		s|Button.simpleGolden:up {
-			color: #934002;
-		}
-		s|Button.simpleGolden:over {
-			color: #333333;
-		}
-		*/
-
         #fileList {
             borderVisible : false;
         }
@@ -90,8 +42,17 @@
         import flash.events.Event;
         import mx.collections.ArrayCollection;
 
+        [Bindable]
+        public var waterMarkChecked:Boolean = true;
+
         private var core:PicmanUploader;
-        private var _targetAlbum:Object = {};
+        private var waterMarkSettingUrl:String = 'http://picman.china.alibaba.com/album/print_set.htm';
+
+        private function init():void
+        {
+            initExternal();
+            initApplication();
+        }
 
         private function initApplication():void
         {
@@ -99,11 +60,43 @@
             core.visible = false;
             stage.addChild(core);
 
+            core.setFileCountLimit(50);
             core.setBrowseFilter(buildFileFilter({
                 '图片' : ['jpg', 'jpeg', 'png', 'gif', 'bmp']
             }));
             core.addEventListener('fileSelect', onSelectFiles);
+            core.addEventListener('processStart', onProcessStart);
+            core.addEventListener('transferCompleteData', onFileTransfered);
             core.addEventListener('finish', onUploadFinish);
+        }
+
+        private function initExternal():void
+        {
+            if(ExternalInterface.available){
+                ExternalInterface.addCallback('shouldAddWatermark', shouldAddWatermark);
+                ExternalInterface.addCallback('setTargetAlbum', setTargetAlbum);
+            }
+        }
+
+        private function shouldAddWatermark():Boolean
+        {
+            return waterMarkChecked;
+        }
+
+        private function onProcessStart(evt:Event):void 
+        {
+            var id:String = evt['file'];
+            var idx:int = core.getFileIndexById( id );
+            if(idx > 0){
+                fileList.ensureIndexIsVisible( idx );
+            }
+        }
+
+        private function onFileTransfered(evt:Event):void
+        {
+            var id:String = evt['file'];
+            var data:*    = evt['data'];
+            var file:File = File.id2file( id );
         }
 
         private function buildFileFilter(obj:Object):Array
@@ -142,10 +135,33 @@
         {
             currentState = 'queue';
             var files:Vector.<File> = core.files;
-            trace(files);
             var count:int = files.length;
+            showRefusedFiles();
 
             renderFileList();
+        }
+
+        private function showRefusedFiles():void
+        {
+            var all:Vector.<File> = core.allFiles;
+            var refByPoolSize:Vector.<File> = core.allFiles.filter(function(file:File, idx:int, ...args):Boolean{
+                return file.status.type === 'refused' && file.status.data === 'REACH_MAX_FILE_COUNT';
+            });
+
+            var refByFileSize:Vector.<File> = core.allFiles.filter(function(file:File, idx:int, ...args):Boolean{
+                return file.status.type === 'refused' && file.status.data === 'SIZE_OVERFLOW';
+            });
+
+            var msgs:Vector.<String> = new Vector.<String>;
+            var len:uint = refByPoolSize.length;
+            if(len > 0){
+                msgs.push('由于每次最多只能上传 50 张图片，您选中的 ' + all.length + ' 张图片中有 '+len+' 张无法加入上传列表。');
+            }
+            len = refByFileSize.length;
+            if(len > 0){
+                msgs.push('您选中的图片中有 '+len+' 张大于5MB,未能加入上传列表。');
+            }
+            queueSumm.text = '您已选中 ' + core.files.length + ' 张图片。 ' + msgs.join("  ");
 
         }
 
@@ -163,31 +179,49 @@
 
         public function setTargetAlbum(opt:Object):void
         {
-            _targetAlbum.id = opt.id;
-            var space:uint = _targetAlbum.space = opt.space;
-            if(space <= 0){
-                albumFullIndicator.visible = true;
-                fsBtn.enabled = false;
-            } else {
-                albumFullIndicator.visible = false;
-                fsBtn.enabled = true;
-            }
-        }
+            var space:uint  = opt.remain;
 
-        private function onClickUpBtn(evt:Event=null):void 
-        {
-            upload();
+            if(currentState === 'ready'){
+                if(space <= 0){
+                    albumFullIndicator.visible = true;
+                    fsBtn.enabled              = false;
+                } else {
+                    albumFullIndicator.visible = false;
+                    fsBtn.enabled              = true;
+                }
+            }
         }
 
         private function upload():void
         {
-            core.uploadAll('http://localhost:4567');
+			if(Capabilities.playerType == "StandAlone"){
+                core.uploadAll('http://localhost:4567/random', {albumId:'222'}, 'FileData', 'fname');
+            } else {
+                core.dispatchEventToJavascript({type:'clickUploadBtn'});
+            }
             currentState = 'uploading';
         }
 
         private function onUploadFinish(evt:Event):void
         {
+            filterSucessfulFiles();
             currentState = 'result';
+            updateFileList();
+            if( core.files.length <= 0 ){
+                //TODO: goto uploading success result page
+                trace("Job done!");
+            }
+        }
+
+        private function filterSucessfulFiles():void
+        {
+            var files:Vector.<File> = core.files.slice();
+            for each(var file:File in files)
+            {
+                if( file.status.type == 'success' ) {
+                    core.rmFile( file );
+                }
+            }
         }
 
         private function onRemovingFile(evt:Event):void
@@ -207,21 +241,34 @@
             }
         }
 
-        private function onClickRetryBtn(evt:Event):void
-        {
-            reuploadFailedFiles();
-        }
-
         private function reuploadFailedFiles():void
         {
+            resetFilesStatus();
             upload();
+        }
+
+        private function resetFilesStatus():void
+        {
+            var files:Vector.<File> = core.files.slice();
+            for each(var file:File in files)
+            {
+                file.updateStatus( 'ready' );
+            }
+        }
+
+        private function onWatermarkSettingChange(evt:Event):void
+        {
+            waterMarkChecked = evt.target.selected;
         }
 
     ]]></fx:Script>
 
-    <s:VGroup includeIn="ready">
-        <s:Label id="albumFullIndicator" color="#FF0000" visible="false">该相册已满，无法继续上传
-    请选择其他相册或新建相册</s:Label>
+    <s:VGroup includeIn="ready" horizontalAlign="center">
+        <s:Label id="albumFullIndicator"
+            color="#FF0000" 
+            visible="false" 
+            text="该相册已满，无法继续上传&#x00A;请选择其他相册或新建相册"
+            />
 
         <s:Button id="fsBtn"
             styleName="golden" 
@@ -231,33 +278,36 @@
     </s:VGroup>
 
     <s:VGroup includeIn="queue,uploading,result" width="100%" height="100%" verticalAlign="top">
-
-        <s:Label id="queueSumm" text="{('您已选中 ' + fileList.dataProvider.length + ' 张图片')}" />
-
+        <s:Label id="queueSumm" width="100%" />
         <s:List id="fileList" width="100%" height="400" itemRenderer="FileItemRenderer">
             <s:layout>
                 <s:TileLayout />
             </s:layout>
         </s:List>
-
-        <s:HGroup width="100%" includeIn="queue">
-            <s:CheckBox label="为上传的图片设置水印"></s:CheckBox>
-            <mx:LinkButton label="水印设置" />
-            <s:HGroup right="1" horizontalAlign="right" width="100%" verticalAlign="middle">
-
-                <s:Button id="upBtn" styleName="golden" label="开始上传" click="onClickUpBtn(event)" />
-
-                <mx:LinkButton id="selectMoreBtn" label="继续选择" click="onClickSelectBtn(event)" />
-            </s:HGroup>
-        </s:HGroup>
-
-        <s:HGroup includeIn="uploading" width="100%" horizontalAlign="center">
-            <s:Label text="上传中..." />
-        </s:HGroup>
-
-        <s:HGroup includeIn="result" width="100%" horizontalAlign="right">
-            <s:Button id="retryBtn" styleName="golden" label="重试" click="onClickRetryBtn(event)" />
-        </s:HGroup>
-
     </s:VGroup>
+
+    <s:HGroup width="100%" includeIn="queue">
+        <s:CheckBox selected="{waterMarkChecked}" change="{onWatermarkSettingChange(event)}" label="为上传的图片设置水印"></s:CheckBox>
+        <mx:LinkButton label="水印设置" click="navigateToURL(new URLRequest(waterMarkSettingUrl), '_blank')" />
+        <s:HGroup right="1" horizontalAlign="right" width="100%" verticalAlign="middle">
+            <s:Button id="upBtn" 
+                styleName="golden" 
+                label="开始上传" 
+                enabled="{fileList.dataProvider.length > 0}"
+                click="upload()" />
+            <mx:LinkButton id="selectMoreBtn" label="继续选择" 
+                click="onClickSelectBtn(event)" />
+        </s:HGroup>
+    </s:HGroup>
+
+    <s:HGroup includeIn="uploading" width="100%" horizontalAlign="center">
+        <s:Label text="上传中..." />
+    </s:HGroup>
+
+    <s:HGroup includeIn="result" width="100%" horizontalAlign="right">
+        <s:Button id="retryBtn" styleName="golden" label="重试" 
+            click="reuploadFailedFiles()" 
+            enabled="{fileList.dataProvider.length > 0}" />
+    </s:HGroup>
+
 </s:Application>

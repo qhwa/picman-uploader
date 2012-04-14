@@ -9,6 +9,7 @@
     <s:states>
         <s:State name="normal"/>
         <s:State name="hovered"/>
+		<s:State name="ok" />
 		<s:State name="failed" />
 		<s:State name="uploading" />
     </s:states>
@@ -21,26 +22,41 @@
 		[Bindable]
 		private var upProgPercent:String = '';
 
+		[Bindable]
+		private var tip:String;
+		private var thumbManager:ThumbManager = ThumbManager.instance;
+
         private function init():void
         {
 			addEventListener('mouseDown', stopEvt, true);
-			addEventListener('mouseOver', stopEvt, true);
-			addEventListener('rollOver', stopEvt, true);
         }
 
 		private function updateData():void
 		{
+			tip = null;
+
             var file:File = data as File;
 			file.addEventListener('statusChange', onFileStatusChange);
+			updateFileStatus( file );
 
 			clearCurrentThumb();
 
-            if(file.loaded){
-				thumb.source = file.getThumbImageData();
-			} else {
-				file.addEventListener('imageReady', onFileDataLoaded);
-                file.load();
+			var id:String = file.id;
+			thumbManager.addEventListener(ThumbEvent.LOADED, onThumbLoaded);
+			thumbManager.loadThumb( file.id );
+		}
+
+		override protected function set hovered(value:Boolean):void
+		{
+			if(usingDefaultHovered()){
+				super.hovered = value;
 			}
+		}
+
+		private function usingDefaultHovered():Boolean 
+		{
+			var states:Array = 'uploading failed'.split(' ');
+			return states.indexOf( currentState ) === -1;
 		}
 
 		private function clearCurrentThumb():void
@@ -55,43 +71,75 @@
 			evt.stopImmediatePropagation();
 		}
 
-		private function onFileDataLoaded(evt:Event):void
-		{
-			thumb.source = evt.target.getThumbImageData();
-		}
-
 		private function onFileStatusChange(evt:Event):void
 		{
             var file:File = data as File;
+			updateFileStatus( file );
+		}
 
+		private function updateFileStatus( file:File ):void
+		{
 			var handler:String = 'updateFileStatus_' + file.status.type;
+			if( file.finished && file.failed ){
+				currentState = 'failed';
+			}
 			try { this[handler](file); }
 			catch (e:Error) {}
+		}
+
+		private function updateFileStatus_ready(file:File):void
+		{
+			currentState = 'normal';
 		}
 
 		private function updateFileStatus_cs_processing(file:File):void
 		{
 			currentState = 'uploading';
 			var prog:Number = Number(file.status.data);
+			updateProgress( prog );
+		}
+
+		private function updateFileStatus_cs_processed(file:File):void
+		{
+			updateProgress(1.0);
+		}
+
+		private function updateProgress(prog:Number):void
+		{
 			upProgPercent = Math.floor(prog * 100) + '%';
-			progBar.width = Math.floor(prog * 80);
-			mouseEnabled = false;
+			progBar.width = Math.floor(prog * 82);
+		}
+
+		private function updateFileStatus_not_transfered(file:File):void
+		{
+			currentState = 'failed';
+			tip = file.status.data;
 		}
 
 		private function updateFileStatus_transfer_fail(file:File):void
 		{
 			currentState = 'failed';
+			tip = file.status.data;
+		}
+
+		private function updateFileStatus_success(file:File):void
+		{
+			currentState = 'ok';
 		}
 
 		private function onClickRmBtn(evt:Event):void
 		{
 			stopEvt(evt);
-			removeSelf();
+			dispatchEvent( new Event('remove', true, true) );
 		}
 
-		private function removeSelf():void
+		private function onThumbLoaded(evt:ThumbEvent):void
 		{
-			dispatchEvent( new Event('remove', true, true) );
+			var file:File = data as File;
+			if(evt.data === file.id){
+				thumb.source = thumbManager.getThumb( file.id );
+				thumbManager.removeEventListener( evt.type, arguments.callee );
+			}
 		}
 
 
@@ -101,7 +149,6 @@
 		<s:BorderContainer id="thumbContainer" 
 			width="82" height="82"
 			borderColor="0xcccccc" 
-			borderColor.uploading="0xFF7300" 
 			borderColor.failed="0xFF0000" 
 			>
 			<s:Image id="thumb" smooth="true" 
@@ -144,4 +191,26 @@
 		<s:Button label="删除" click="onClickRmBtn(event)" />
 	</s:Group>
     
+	<s:Group
+		includeIn="failed"
+		width="100%" height="20" bottom="18">
+
+		<s:Rect width="100%" height="20" >
+			<s:fill><s:SolidColor color="0xFF0000" alpha="0.5" /></s:fill>
+		</s:Rect>
+
+		<s:Label id="failMsg" text="上传失败" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" toolTip="{tip}" />
+	</s:Group>
+
+	<s:Group
+		includeIn="ok"
+		width="100%" height="20" bottom="18">
+
+		<s:Rect width="100%" height="20" >
+			<s:fill><s:SolidColor color="0x7FBE45" alpha="1" /></s:fill>
+		</s:Rect>
+
+		<s:Label text="done" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" />
+	</s:Group>
+
 </s:ItemRenderer>
