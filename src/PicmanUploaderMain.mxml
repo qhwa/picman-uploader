@@ -195,7 +195,7 @@
         private function upload():void
         {
 			if(Capabilities.playerType == "StandAlone"){
-                core.uploadAll('http://localhost:4567/random', {albumId:'222'}, 'FileData', 'fname');
+                core.uploadAll('http://localhost:4567', {albumId:'222'}, 'FileData', 'fname');
             } else {
                 core.dispatchEventToJavascript({type:'clickUploadBtn'});
             }
@@ -208,8 +208,7 @@
             currentState = 'result';
             updateFileList();
             if( core.files.length <= 0 ){
-                //TODO: goto uploading success result page
-                trace("Job done!");
+                core.dispatchEventToJavascript({type:'allUploaded'});
             }
         }
 
@@ -226,7 +225,6 @@
 
         private function onRemovingFile(evt:Event):void
         {
-            trace('rm:', evt.target.data);
             core.rmFile( evt.target.data );
             updateFileList();
         }

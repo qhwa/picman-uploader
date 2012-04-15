@@ -19,7 +19,6 @@
                     uploader = initUploader('#flash-alt');
 
                     uploader.bind('swfReady', function(){
-                        console.log(getFlash().setTargetAlbum);
                         getFlash().setTargetAlbum({id: -1, remain:10});
                     });
 
@@ -94,6 +93,11 @@
                         updateFileStatus( file.id, 'success' );
                     } else {
                         updateFileStatus( file.id, 'transfer_fail', ret.msg );
+
+                        // 当相册空间已满，剩下的图片都不再上传
+                        if( ret.err == 'maxImageSpaceExceed' || ret.err == 'maxImgPerAlbumExceeded' ){
+                            getFlash().dropRemainingFiles( ret.msg );
+                        }
                     }
                 }
 
@@ -108,12 +112,12 @@
                         msg = getErrorMsg( obj.msg ); 
                     }
 
-                    return { success: success, msg: msg };
+                    return { success: success, msg: msg, err: obj.msg };
                 }
 
                 function getErrorMsg( errCode ) {
                     var map = {
-                        'COMPRESS_FAIL' : '无法压缩到2MB以内，请缩小后再试试',
+                        'COMPRESS_FAIL' : '无法压缩到2MB以内，请缩小后再上传',
                         'notLogin'      : '您还未登录，无法上传图片！',
                         'imgTooBig'     : '图片因大于2MB，无法上传!',
                         'imgTypeErr'    : '图片格式不对，系统支持 jpg, jpeg, png, gif, bmp',

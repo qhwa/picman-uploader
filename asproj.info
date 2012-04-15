@@ -14,6 +14,7 @@ library:
 #main: src/test/PicmanUploaderTest.mxml
 #main: src/PicmanUploader.as
 main: src/PicmanUploaderMain.mxml
+#main: src/ImageRotatingTest.as
 
 output: 
   file: bin/picman-uploader.swf

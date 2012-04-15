@@ -62,7 +62,10 @@ package
 			minifier.removeEventListener( MinifyEvent.DECODE_ERROR, onDecoded );
 
 			if(bmpd){
-				_cache[evt.file] = BitmapDataUtil.verySmoothShrink( bmpd , 80, 80 );
+				const WIDTH:int = 80;
+				const HEIGHT:int = 80;
+				_cache[evt.file] = BitmapDataUtil.verySmoothShrink( bmpd , WIDTH, HEIGHT );
+				bmpd.dispose();
 				dispatchEvent(new ThumbEvent( ThumbEvent.LOADED, evt.file ));
 			}
 		}

@@ -82,6 +82,7 @@
 			var handler:String = 'updateFileStatus_' + file.status.type;
 			if( file.finished && file.failed ){
 				currentState = 'failed';
+				tip = file.status.data;
 			}
 			try { this[handler](file); }
 			catch (e:Error) {}
@@ -110,18 +111,6 @@
 			progBar.width = Math.floor(prog * 82);
 		}
 
-		private function updateFileStatus_not_transfered(file:File):void
-		{
-			currentState = 'failed';
-			tip = file.status.data;
-		}
-
-		private function updateFileStatus_transfer_fail(file:File):void
-		{
-			currentState = 'failed';
-			tip = file.status.data;
-		}
-
 		private function updateFileStatus_success(file:File):void
 		{
 			currentState = 'ok';
@@ -133,11 +122,21 @@
 			dispatchEvent( new Event('remove', true, true) );
 		}
 
+		private function onClickRotBtn(evt:Event):void
+		{
+			stopEvt(evt);
+
+			thumb.rotation += 90;
+			var file:File = data as File;
+			file.customProperties['rotation'] = thumb.rotation;
+		}
+
 		private function onThumbLoaded(evt:ThumbEvent):void
 		{
 			var file:File = data as File;
 			if(evt.data === file.id){
 				thumb.source = thumbManager.getThumb( file.id );
+				thumb.rotation = Number(file.customProperties['rotation']) || 0;
 				thumbManager.removeEventListener( evt.type, arguments.callee );
 			}
 		}
@@ -146,18 +145,23 @@
     ]]></fx:Script>
     
 	<s:VGroup>
-		<s:BorderContainer id="thumbContainer" 
-			width="82" height="82"
-			borderColor="0xcccccc" 
-			borderColor.failed="0xFF0000" 
-			>
-			<s:Image id="thumb" smooth="true" 
-				backgroundColor="0xf8fbff" 
-				backgroundColor.failed="#FFF5F5" 
-				width="80" height="80" 
-				horizontalAlign="center" 
-				verticalAlign="middle" />
-		</s:BorderContainer>
+
+		<s:Group id="thumbContainer" width="82" height="82" >
+			<s:Rect width="100%" height="100%" >
+				<s:stroke>
+					<s:SolidColorStroke color="0xcccccc" color.failed="0xFF0000" />
+				</s:stroke>
+				<s:fill>
+					<s:SolidColor color="0xf8fbff" color.failed="#FFF5F5" />
+				</s:fill>
+			</s:Rect>
+
+			<s:Image id="thumb" 
+				horizontalCenter="0"
+				verticalCenter="0"
+				maxWidth="80" maxHeight="80" />
+
+		</s:Group>
 		
 		<s:Label text="{data.name}" 
 			width="80" 
@@ -185,11 +189,12 @@
 		<s:Label text="{upProgPercent}" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" />
 	</s:Group>
 
-	<s:Group
+	<s:HGroup
 		includeIn="hovered"
 		width="100%" height="20" bottom="20">
-		<s:Button label="删除" click="onClickRmBtn(event)" />
-	</s:Group>
+		<s:Button label="旋转" width="30" click="onClickRotBtn(event)" />
+		<s:Button label="删除" width="30" click="onClickRmBtn(event)" />
+	</s:HGroup>
     
 	<s:Group
 		includeIn="failed"
