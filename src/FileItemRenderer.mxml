@@ -204,7 +204,7 @@
 					</s:Rect>
 
 					<s:Rect id="progBar" width="0" height="20" >
-						<s:fill><s:SolidColor color="0x0000FF" alpha="0.5" /></s:fill>
+						<s:fill><s:SolidColor color="#407ACA" alpha="0.8" /></s:fill>
 					</s:Rect>
 
 					<s:Label text="{upProgPercent}" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" />
