@@ -24,6 +24,10 @@
 
 		[Bindable]
 		private var tip:String;
+
+		[Bindable]
+		private var canRotate:Boolean = false;
+
 		private var thumbManager:ThumbManager = ThumbManager.instance;
 
         private function init():void
@@ -37,13 +41,14 @@
 
             var file:File = data as File;
 			file.addEventListener('statusChange', onFileStatusChange);
-			updateFileStatus( file );
 
+			updateFileStatus( file );
 			clearCurrentThumb();
 
 			var id:String = file.id;
 			thumbManager.addEventListener(ThumbEvent.LOADED, onThumbLoaded);
 			thumbManager.loadThumb( file.id );
+
 		}
 
 		override protected function set hovered(value:Boolean):void
@@ -108,12 +113,7 @@
 		private function updateProgress(prog:Number):void
 		{
 			upProgPercent = Math.floor(prog * 100) + '%';
-			progBar.width = Math.floor(prog * 82);
-		}
-
-		private function updateFileStatus_success(file:File):void
-		{
-			currentState = 'ok';
+			progBar.width = Math.floor(prog * 80);
 		}
 
 		private function onClickRmBtn(evt:Event):void
@@ -126,9 +126,11 @@
 		{
 			stopEvt(evt);
 
-			thumb.rotation += 90;
-			var file:File = data as File;
-			file.customProperties['rotation'] = thumb.rotation;
+			if(canRotate){
+				thumb.rotation += 90;
+				var file:File = data as File;
+				file.customProperties['rotation'] = thumb.rotation;
+			}
 		}
 
 		private function onThumbLoaded(evt:ThumbEvent):void
@@ -138,13 +140,15 @@
 				thumb.source = thumbManager.getThumb( file.id );
 				thumb.rotation = Number(file.customProperties['rotation']) || 0;
 				thumbManager.removeEventListener( evt.type, arguments.callee );
+				canRotate = Boolean( file.customProperties['canRotate'] );
 			}
 		}
 
 
     ]]></fx:Script>
-    
-	<s:VGroup>
+
+	
+	<s:VGroup gap="0">
 
 		<s:Group id="thumbContainer" width="82" height="82" >
 			<s:Rect width="100%" height="100%" >
@@ -152,7 +156,7 @@
 					<s:SolidColorStroke color="0xcccccc" color.failed="0xFF0000" />
 				</s:stroke>
 				<s:fill>
-					<s:SolidColor color="0xf8fbff" color.failed="#FFF5F5" />
+					<s:SolidColor color="0xffffff" color.failed="#FFF5F5" />
 				</s:fill>
 			</s:Rect>
 
@@ -161,61 +165,72 @@
 				verticalCenter="0"
 				maxWidth="80" maxHeight="80" />
 
+			<s:Group id="actions" width="100%" height="20" bottom="0" left="1" right="1">
+
+				<s:Group includeIn="hovered" height="100%">
+
+					<s:Rect width="80" height="100%">
+						<s:fill><s:SolidColor color="#8d8e90" alpha="0.2" /></s:fill>
+					</s:Rect>
+
+					<s:Button label="旋转" 
+						left="4" 
+						verticalCenter="0"
+						click="onClickRotBtn(event)" 
+						skinClass="{RotateButton}" 
+						alpha="{canRotate ? 1 : 0.3}"
+						toolTip="{canRotate ? '旋转图片' : '图片太大,无法旋转'}"
+						/>
+
+					<s:Button label="删除" right="4" 
+						verticalCenter="0"
+						click="onClickRmBtn(event)" 
+						toolTip="移除图片"
+						skinClass="{RemoveFileButton}" />
+				</s:Group>
+
+				<s:Group includeIn="uploading">
+					<s:Rect width="100%" height="100%" >
+						<s:fill><s:SolidColor color="0xCCCCCC" alpha="0.5" /></s:fill>
+					</s:Rect>
+
+					<s:Rect id="progBar" width="0" height="20" >
+						<s:fill><s:SolidColor color="0x0000FF" alpha="0.5" /></s:fill>
+					</s:Rect>
+
+					<s:Label text="{upProgPercent}" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" />
+				</s:Group>
+
+				<s:Group includeIn="failed" toolTip="{tip}">
+					<s:Rect width="100%" height="100%">
+						<s:fill><s:SolidColor color="0xda7070" alpha="0.21" /></s:fill>
+					</s:Rect>
+
+					<s:HGroup verticalAlign="middle" horizontalAlign="center" width="80">
+						<s:Label id="failMsg" text="上传失败" 
+							height="20" 
+							verticalAlign="middle" 
+							color="#DA7070" 
+							/>
+
+						<s:Image source="@Embed(source='../assets/fail-tip-icon.gif')" />
+					</s:HGroup>
+				</s:Group>
+
+			</s:Group>
+
 		</s:Group>
 		
 		<s:Label text="{data.name}" 
 			width="80" 
+			height="32"
 			lineBreak="toFit" 
 			showTruncationTip="true" 
 			maxDisplayedLines="1" 
 
 			color="0x838485" 
-			textAlign="center" 
+			textAlign="center"
+			verticalAlign="middle"
 		  />
 	</s:VGroup>
-
-	<s:Group
-		includeIn="uploading"
-		width="100%" height="20" bottom="18">
-
-		<s:Rect width="100%" height="20" >
-			<s:fill><s:SolidColor color="0xCCCCCC" alpha="0.5" /></s:fill>
-		</s:Rect>
-
-		<s:Rect id="progBar" width="0" height="20" >
-			<s:fill><s:SolidColor color="0x0000FF" alpha="0.5" /></s:fill>
-		</s:Rect>
-
-		<s:Label text="{upProgPercent}" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" />
-	</s:Group>
-
-	<s:HGroup
-		includeIn="hovered"
-		width="100%" height="20" bottom="20">
-		<s:Button label="旋转" width="30" click="onClickRotBtn(event)" />
-		<s:Button label="删除" width="30" click="onClickRmBtn(event)" />
-	</s:HGroup>
-    
-	<s:Group
-		includeIn="failed"
-		width="100%" height="20" bottom="18">
-
-		<s:Rect width="100%" height="20" >
-			<s:fill><s:SolidColor color="0xFF0000" alpha="0.5" /></s:fill>
-		</s:Rect>
-
-		<s:Label id="failMsg" text="上传失败" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" toolTip="{tip}" />
-	</s:Group>
-
-	<s:Group
-		includeIn="ok"
-		width="100%" height="20" bottom="18">
-
-		<s:Rect width="100%" height="20" >
-			<s:fill><s:SolidColor color="0x7FBE45" alpha="1" /></s:fill>
-		</s:Rect>
-
-		<s:Label text="done" textAlign="center" width="80" height="20" verticalAlign="middle" color="0xFFFFFF" />
-	</s:Group>
-
 </s:ItemRenderer>

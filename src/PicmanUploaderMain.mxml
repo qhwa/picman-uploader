@@ -3,6 +3,7 @@
                xmlns:mx="library://ns.adobe.com/flex/mx"
                xmlns:s="library://ns.adobe.com/flex/spark" 
                xmlns:btn="cn.alibaba.common.ui.button.*" 
+               xmlns:component="*"
 			   applicationComplete="init()"
                >
 	<s:states>
@@ -12,26 +13,35 @@
 		<s:State name="result"/>
 	</s:states>
 
-	<s:layout>
-		<s:VerticalLayout
-			paddingLeft="8" paddingTop="8"
-			paddingRight="8" paddingBottom="8"
-			verticalAlign="middle"
-			horizontalAlign="center"
-			/>
-	</s:layout>
-
 	<fx:Style>
 		@namespace s "library://ns.adobe.com/flex/spark";
 		@namespace mx "library://ns.adobe.com/flex/mx";
 		
-		/** Golden 一级金色 **/
-		s|Button.golden {
-			skinClass: ClassReference("cn.alibaba.common.ui.button.GoldenButton");
+		s|Button.primary {
+			skinClass: ClassReference("cn.alibaba.common.ui.button.MyAliPrimaryButton");
 		}
+
+        s|Button.work {
+            skinClass: ClassReference("cn.alibaba.common.ui.button.MyAliNormalButton");
+        }
 		
         #fileList {
             borderVisible : false;
+            rollOverColor : #FFFFFF;
+        }
+
+        mx|ToolTip {
+            backgroundAlpha: 1.0;
+            backgroundColor: #FFFBDD;
+            borderStyle: solid;
+            borderColor: #E9D6AF;
+            color: #3F3F3D;
+            cornerRadius: 0;
+            fontSize: 13;
+        }
+
+        mx|LinkButton {
+            color: #1166A7;
         }
 		
 	</fx:Style>
@@ -66,7 +76,6 @@
             }));
             core.addEventListener('fileSelect', onSelectFiles);
             core.addEventListener('processStart', onProcessStart);
-            core.addEventListener('transferCompleteData', onFileTransfered);
             core.addEventListener('finish', onUploadFinish);
         }
 
@@ -75,6 +84,7 @@
             if(ExternalInterface.available){
                 ExternalInterface.addCallback('shouldAddWatermark', shouldAddWatermark);
                 ExternalInterface.addCallback('setTargetAlbum', setTargetAlbum);
+                ExternalInterface.addCallback('updateFileList', updateFileList);
             }
         }
 
@@ -90,13 +100,6 @@
             if(idx > 0){
                 fileList.ensureIndexIsVisible( idx );
             }
-        }
-
-        private function onFileTransfered(evt:Event):void
-        {
-            var id:String = evt['file'];
-            var data:*    = evt['data'];
-            var file:File = File.id2file( id );
         }
 
         private function buildFileFilter(obj:Object):Array
@@ -171,10 +174,12 @@
             fileList.addEventListener('remove', onRemovingFile);
         }
 
-        private function toArray(iterable:*):Array {
-             var ret:Array = [];
-             for each (var elem:* in iterable) ret.push(elem);
-             return ret;
+        private function toArray(files:Vector.<File>):Array {
+            var ret:Array = [];
+            for each (var file:File in files) {
+                ret.push( file );
+            }
+            return ret;
         }
 
         public function setTargetAlbum(opt:Object):void
@@ -200,6 +205,7 @@
                 core.dispatchEventToJavascript({type:'clickUploadBtn'});
             }
             currentState = 'uploading';
+            queueSumm.text = '';
         }
 
         private function onUploadFinish(evt:Event):void
@@ -259,9 +265,29 @@
             waterMarkChecked = evt.target.selected;
         }
 
+        private function onClickWMSetBtn(evt:Event):void
+        {
+            core.dispatchEventToJavascript({ type: 'setWatermark' });
+        }
+
+        private function onClickSkipBtn(evt:Event):void
+        {
+            core.dispatchEventToJavascript({ type: 'skipToNextStep' });
+        }
+
     ]]></fx:Script>
 
-    <s:VGroup includeIn="ready" horizontalAlign="center">
+	<s:layout>
+		<s:VerticalLayout
+			paddingLeft="18" paddingTop="0"
+			paddingRight="14" paddingBottom="0"
+            gap="0"
+			verticalAlign="top"
+			horizontalAlign="center"
+			/>
+	</s:layout>
+
+    <s:VGroup includeIn="ready" horizontalAlign="center" verticalAlign="middle" height="100%">
         <s:Label id="albumFullIndicator"
             color="#FF0000" 
             visible="false" 
@@ -269,43 +295,60 @@
             />
 
         <s:Button id="fsBtn"
-            styleName="golden" 
+            styleName="primary" 
             label="选择文件并上传" 
             click="onClickSelectBtn(event)"
         />
     </s:VGroup>
 
-    <s:VGroup includeIn="queue,uploading,result" width="100%" height="100%" verticalAlign="top">
-        <s:Label id="queueSumm" width="100%" />
-        <s:List id="fileList" width="100%" height="400" itemRenderer="FileItemRenderer">
+    <s:VGroup includeIn="queue,uploading,result" 
+        width="100%" 
+        gap="0"
+        verticalAlign="top">
+
+        <s:Label id="queueSumm" width="100%" height="36" verticalAlign="middle" />
+        <component:Dotline width="100%" height="1" />
+        <s:List id="fileList" 
+            width="100%" 
+            height="364" 
+            itemRenderer="FileItemRenderer">
             <s:layout>
-                <s:TileLayout />
+                <s:TileLayout
+                    paddingLeft="0" paddingRight="0"
+                    paddingTop="19" paddingBottom="0"
+                    horizontalGap="5" verticalGap="1"
+                    />
             </s:layout>
         </s:List>
+        <component:Dotline width="100%" height="1" />
     </s:VGroup>
 
-    <s:HGroup width="100%" includeIn="queue">
-        <s:CheckBox selected="{waterMarkChecked}" change="{onWatermarkSettingChange(event)}" label="为上传的图片设置水印"></s:CheckBox>
-        <mx:LinkButton label="水印设置" click="navigateToURL(new URLRequest(waterMarkSettingUrl), '_blank')" />
+    <s:HGroup width="100%" includeIn="queue" paddingTop="18" >
+        <s:CheckBox selected="{waterMarkChecked}" change="{onWatermarkSettingChange(event)}" label="为上传的图片设置水印" />
+        <mx:LinkButton label="水印设置" click="onClickWMSetBtn(event)" />
         <s:HGroup right="1" horizontalAlign="right" width="100%" verticalAlign="middle">
             <s:Button id="upBtn" 
-                styleName="golden" 
+                styleName="primary" 
                 label="开始上传" 
                 enabled="{fileList.dataProvider.length > 0}"
                 click="upload()" />
-            <mx:LinkButton id="selectMoreBtn" label="继续选择" 
-                click="onClickSelectBtn(event)" />
+            <mx:LinkButton label="继续选择" click="onClickSelectBtn(event)" />
         </s:HGroup>
     </s:HGroup>
 
-    <s:HGroup includeIn="uploading" width="100%" horizontalAlign="center">
+    <s:HGroup includeIn="uploading" width="100%" horizontalAlign="center" paddingTop="18">
         <s:Label text="上传中..." />
     </s:HGroup>
 
-    <s:HGroup includeIn="result" width="100%" horizontalAlign="right">
-        <s:Button id="retryBtn" styleName="golden" label="重试" 
+    <s:HGroup includeIn="result" width="100%" horizontalAlign="right" paddingTop="18" paddingRight="6" gap="20">
+
+        <s:Button id="skipBtn" styleName="primary" label="跳过"
+            click="onClickSkipBtn(event)"
+            />
+        <s:Button id="retryBtn" styleName="work" label="重试" 
             click="reuploadFailedFiles()" 
             enabled="{fileList.dataProvider.length > 0}" />
+
     </s:HGroup>
 
 </s:Application>

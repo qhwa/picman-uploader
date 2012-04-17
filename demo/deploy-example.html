@@ -22,6 +22,10 @@
                         getFlash().setTargetAlbum({id: -1, remain:10});
                     });
 
+                    uploader.bind('setWatermark', function(){
+                        alert('TODO: 设置水印');
+                    });
+
                     /**
                     * 用户点击了上传按钮,触发此事件
                     */
@@ -54,12 +58,16 @@
                             }
                         });
                     });
+
+                    uploader.bind('skipToNextStep', function(evt, o){
+                        alert('TODO: skip to next step');
+                    });
                         
                 });
 
                 function initUploader(container) {
                     return $(container).flash({
-                        swf: 'flash/picman-uploader.swf?v=2012041501',
+                        swf: 'flash/picman-uploader.swf?v=2012041701',
                         width: '100%',
                         height: '100%',
                         allowScriptAccess: 'always',
@@ -89,14 +97,16 @@
                 function checkFileByResponse(evt, o){
                     var file = o.file;
                     var ret = getResultFromResponse( file.msg );
+                    var swf = getFlash();
                     if(ret.success){
-                        updateFileStatus( file.id, 'success' );
+                        swf.destroyFile( file.id );
+                        swf.updateFileList();
                     } else {
                         updateFileStatus( file.id, 'transfer_fail', ret.msg );
 
                         // 当相册空间已满，剩下的图片都不再上传
                         if( ret.err == 'maxImageSpaceExceed' || ret.err == 'maxImgPerAlbumExceeded' ){
-                            getFlash().dropRemainingFiles( ret.msg );
+                            swf.dropRemainingFiles( ret.msg );
                         }
                     }
                 }

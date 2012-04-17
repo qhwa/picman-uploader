@@ -65,8 +65,10 @@ package
 				const WIDTH:int = 80;
 				const HEIGHT:int = 80;
 				_cache[evt.file] = BitmapDataUtil.verySmoothShrink( bmpd , WIDTH, HEIGHT );
-				bmpd.dispose();
+				var file:File = File.id2file( evt.file );
+				file.customProperties['canRotate'] = BitmapDataUtil.isImageSizeValidInFlash( bmpd.width, bmpd.height );
 				dispatchEvent(new ThumbEvent( ThumbEvent.LOADED, evt.file ));
+				bmpd.dispose();
 			}
 		}
 		
