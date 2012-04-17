@@ -64,10 +64,16 @@ package
 			if(bmpd){
 				const WIDTH:int = 80;
 				const HEIGHT:int = 80;
-				_cache[evt.file] = BitmapDataUtil.verySmoothShrink( bmpd , WIDTH, HEIGHT );
+
 				var file:File = File.id2file( evt.file );
-				file.customProperties['canRotate'] = BitmapDataUtil.isImageSizeValidInFlash( bmpd.width, bmpd.height );
-				dispatchEvent(new ThumbEvent( ThumbEvent.LOADED, evt.file ));
+				try {
+					_cache[evt.file] = BitmapDataUtil.verySmoothShrink( bmpd , WIDTH, HEIGHT );
+					file.customProperties['canRotate'] = BitmapDataUtil.isImageSizeValidInFlash( bmpd.width, bmpd.height );
+					dispatchEvent(new ThumbEvent( ThumbEvent.LOADED, evt.file ));
+				} catch (e:Error) {
+					dispatchEvent(new ThumbEvent( ThumbEvent.LOAD_FAIL, evt.file ));
+					file.customProperties['canRotate'] = false;
+				}
 				bmpd.dispose();
 			}
 		}

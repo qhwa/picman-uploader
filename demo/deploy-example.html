@@ -39,6 +39,16 @@
                     uploader.bind('transferCompleteData', checkFileByResponse );
                         
                     /**
+                    * 图片经过客户端处理后，没有被传输到服务器
+                    * 原因是处理完后，图片仍然没有达到限定的字节数之内
+                    * 因此传输取消
+                    */
+                    uploader.bind('transferAbort', function(evt, o){
+                        var file = o.file;
+                        updateFileMsg( file, getErrorMsg(file.msg) );
+                    });
+
+                    /**
                     * 传输失败事件的处理，
                     * 因为各种原因，网络传输有可能失败
                     */
@@ -50,14 +60,7 @@
                     * 所有文件都已经传输完毕
                     * 有些文件的状态变化没有对应的事件，可以在这里统一处理
                     */
-                    uploader.bind('finish', function(evt, o){
-                        var files = getFlash().getFileStatuses();
-                        $.each(files, function(idx, f){
-                            if ( f.status == 'not_transfered' ) {
-                                updateFileMsg( f, getErrorMsg(f.msg) );
-                            }
-                        });
-                    });
+                    uploader.bind('finish', function(evt, o){});
 
                     uploader.bind('skipToNextStep', function(evt, o){
                         alert('TODO: skip to next step');

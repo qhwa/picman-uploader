@@ -6,6 +6,7 @@ package
 	{
 
 		static public const LOADED:String = 'loaded';
+		static public const LOAD_FAIL:String = 'loadFail';
 
 		public function ThumbEvent(type:String, data:String = "", bubbles:Boolean = false, cancelable:Boolean = false)
 		{
