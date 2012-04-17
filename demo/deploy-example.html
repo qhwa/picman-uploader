@@ -19,7 +19,10 @@
                     uploader = initUploader('#flash-alt');
 
                     uploader.bind('swfReady', function(){
-                        getFlash().setTargetAlbum({id: -1, remain:10});
+                        var swf = getFlash();
+                        swf.setRequestCharset( 'utf-8' );
+                        swf.setResponseCharset( 'utf-8' );
+                        swf.setTargetAlbum({id: -1, remain:10});
                     });
 
                     uploader.bind('setWatermark', function(){
