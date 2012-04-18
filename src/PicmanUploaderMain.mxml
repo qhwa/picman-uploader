@@ -16,6 +16,7 @@
 	<fx:Style>
 		@namespace s "library://ns.adobe.com/flex/spark";
 		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace component "*";
 		
 		s|Button.primary {
 			skinClass: ClassReference("cn.alibaba.common.ui.button.MyAliPrimaryButton");
@@ -43,19 +44,24 @@
         mx|LinkButton {
             color: #1166A7;
         }
+
+        component|Dotline {
+            lineColor: #A7A7A7;
+        }
 		
 	</fx:Style>
 
     <fx:Script><![CDATA[
 
         import cn.alibaba.product.uploader.core.File;
+        import cn.alibaba.product.uploader.AliUploader;
         import flash.events.Event;
         import mx.collections.ArrayCollection;
 
         [Bindable]
         public var waterMarkChecked:Boolean = true;
 
-        private var core:PicmanUploader;
+        private var core:AliUploader;
         private var waterMarkSettingUrl:String = 'http://picman.china.alibaba.com/album/print_set.htm';
 
         private function init():void
@@ -66,7 +72,7 @@
 
         private function initApplication():void
         {
-            core = new PicmanUploader();
+            core = new AliUploader();
             core.visible = false;
             stage.addChild(core);
 
@@ -164,7 +170,7 @@
             if(len > 0){
                 msgs.push('您选中的图片中有 '+len+' 张大于5MB,未能加入上传列表。');
             }
-            queueSumm.text = '您已选中 ' + core.files.length + ' 张图片。 ' + msgs.join("  ");
+            queueSumm.text = core.files.length + ' 张图已加入上传列表。 ' + msgs.join("  ");
 
         }
 

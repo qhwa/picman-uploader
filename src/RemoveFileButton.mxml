@@ -2,6 +2,7 @@
 <s:SparkSkin	xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:s="library://ns.adobe.com/flex/spark" 
 				xmlns:fb="http://ns.adobe.com/flashbuilder/2009" 
+                creationComplete="init()"
 				>
     
     <!-- host component -->
@@ -14,6 +15,20 @@
         ]]>
     </fx:Metadata>
 	
+    <fx:Script fb:purpose="styling">
+        <![CDATA[
+            import spark.components.Button;
+
+            [Bindable]
+            public var hostComponent:Button;
+
+            private function init():void {
+                hostComponent.buttonMode = true;
+                hostComponent.useHandCursor = true;
+            }
+        ]]>        
+    </fx:Script>
+    
     <!-- states -->
     <s:states>
         <s:State name="up" />
