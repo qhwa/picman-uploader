@@ -13,7 +13,7 @@ library:
 #main: src/cn/alibaba/product/picman/uploader/Main.mxml
 #main: src/test/PicmanUploaderTest.mxml
 #main: src/PicmanUploader.as
-main: src/PicmanUploaderMain.mxml
+main: /home/qhwa/workspace/lib/as_proj_nightly_builder/libraries/ccbu-trunk/cn/alibaba/product/picman/uploader/Main.mxml
 #main: src/ImageRotatingTest.as
 
 output: 
