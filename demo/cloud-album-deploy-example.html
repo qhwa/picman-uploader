@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="gbk"/>
+        <title>Picman uploader demo</title>
+        <meta name="description" content="阿里巴巴批发大市场"/>
+        <meta name="keywords" content="阿里巴巴,采购批发,1688,行业门户,网上贸易,b2b,电子商务"/>
+        <base target="_self"/>
+
+        <!-- 依赖的js库 -->
+        <script src="http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js"></script>
+        
+        <!-- flash上传相关的样式 -->
+        <link href="stylesheets/flash-upload.css" rel="stylesheet" type="text/css" />
+
+        <style>
+            body {
+                background: #fff;
+            }
+
+            .picman-flash-uploader {
+                width: 952px;
+                height: 500px;
+            }
+        </style>
+
+    </head>
+    <body>
+
+        <div class="picman-flash-uploader" data-config-swf="flash/cloud-album-uploader.swf">
+            <div class="upgrade-msg">使用普通上传需要最新版本 Flash Player 支持。<br/>您尚未安装或版本过低，建议您：
+                <p class="action"><a href="http://get.adobe.com/flashplayer" target="_blank">下载安装最新版本 Flash Player</a></p>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="scripts/flash-upload.js"></script>
+
+        <script>
+            (function($, PF, undefined){
+                $(function(){
+                    PF.initUploader().done(function(swf){
+
+                        swf.setRequestCharset( 'utf-8' );   // 生产环境一般是gbk
+                        swf.setResponseCharset( 'utf-8' );  // 生产环境一般是gbk
+                        swf.setTargetAlbum({remain:10});    // 目前在flash中只用到remain
+
+                        bindEvents(PF.instance);
+
+                    }).fail(function() {
+                        $('.upgrade-msg').show();
+                    });
+
+                    /**
+                     * 核心事件文档
+                     * http://wd.alibaba-inc.com/doc/page/work/cbu-architecture/flash-uploader-external-interface#events
+                     *
+                     * picman-uploader专有的事件:
+                     *  - clickUploadBtn
+                     *  - allUploaded
+                     *  - setWatermark
+                     *  - skipToNextStep
+                     */
+                    function bindEvents(uploader) {
+
+                        uploader.on('processStart', function(){
+                            console.log('TODO: 进入上传流程，阻止用户关闭当前窗口');
+                        });
+
+                        uploader.on('finish', function(){
+                            console.log('TODO: 文件上传完毕，取消阻止关闭窗口');
+                        });
+
+                        uploader.on('setWatermark', function(){
+                            alert('TODO: 在弹出框中设置水印');
+                        });
+
+                        uploader.on('skipToNextStep', function(){
+                            alert('TODO: 跳到下一步');
+                        });
+
+                        uploader.on('allUploaded', function(){
+                            alert('TODO: 全部成功，自动进入成功界面');
+                        });
+
+                        uploader.on('setCompressOn', function(){
+                            var swf = PU.getFlash();
+                            swf.setFileSizeLimitOnUserSelect( 5*1024*1024 );
+                            swf.setFileSizeLimitOnTransfer( 2*1024*1024 );
+                            swf.setFileSizeLimitOnMinify( 2*1024*1024 );
+                        });
+
+                        uploader.on('setCompressOff', function(){
+                            var swf = PU.getFlash();
+                            swf.setFileSizeLimitOnUserSelect( 5*1024*1024 );
+                            swf.setFileSizeLimitOnTransfer( 5*1024*1024 );
+                            swf.setFileSizeLimitOnMinify( 100*1024*1024 );
+                        });
+                    }
+
+                    PF.getUploadParams = function(swf) {
+                        return {
+                            url       : 'http://localhost:4567/random',
+                            params : {
+                                watermark : swf.shouldAddWatermark(),
+                                albumId   : -1 //TODO: 改为真实的相册id
+                            },
+                            fieldName : 'FileData',
+                            identity  : 'fname'
+                        };
+                    };
+
+                });
+            })(jQuery, Picman.FlashUploader);
+        </script>
+    </body>
+</html>

@@ -8,7 +8,7 @@
     background     : #fff;
 }
 
-.upgrade-msg {
+.picman-flash-uploader .upgrade-msg {
     width       : 25em;
     margin      : 0 auto;
     text-align  : left;
@@ -18,17 +18,17 @@
     display     : none;
 }
 
-.upgrade-msg a {
+.picman-flash-uploader .upgrade-msg a {
     color           : #336699;
     font-weight     : bold;
     text-decoration : none;
 }
 
-.upgrade-msg a:hover {
+.picman-flash-uploader .upgrade-msg a:hover {
     text-decoration: underline;
 }
 
-.upgrade-msg .action {
+.picman-flash-uploader .upgrade-msg .action {
     padding-left : 65px;
     background   : url(http://img.china.alibaba.com/cms/upload/2012/665/923/329566_150377317.gif) no-repeat left center;
     line-height  : 61px
