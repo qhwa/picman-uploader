@@ -1,0 +1,35 @@
+#flash-alt {
+    border         : 1px solid #ccc;
+    width          : 482px;
+    height         : 482px;
+    display        : table-cell;
+    vertical-align : middle;
+    text-align     : center;
+    background     : #fff;
+}
+
+.upgrade-msg {
+    width       : 25em;
+    margin      : 0 auto;
+    text-align  : left;
+    font-size   : 14px;
+    line-height : 1.8;
+    color       : #505050;
+    display     : none;
+}
+
+.upgrade-msg a {
+    color           : #336699;
+    font-weight     : bold;
+    text-decoration : none;
+}
+
+.upgrade-msg a:hover {
+    text-decoration: underline;
+}
+
+.upgrade-msg .action {
+    padding-left : 65px;
+    background   : url(img/flashplayer.gif) no-repeat left center;
+    line-height  : 61px
+}

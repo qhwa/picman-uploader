@@ -5,204 +5,27 @@
         <title>Picman uploader demo</title>
         <meta name="description" content="阿里巴巴批发大市场"/>
         <meta name="keywords" content="阿里巴巴,采购批发,1688,行业门户,网上贸易,b2b,电子商务"/>
-        <script src="http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js"></script>
-        <style>
-            #flash-alt {
-                border:1px solid #ccc; 
-                width:482px; 
-                height:482px;
-                display: table-cell;
-                vertical-align: middle;
-                text-align: center;
-            }
-
-            .upgrade-msg {
-                width: 25em;
-                margin: 0 auto;
-                text-align: left;
-                font-size: 14px;
-                line-height: 1.8;
-                color: #505050;
-            }
-
-            .upgrade-msg a {
-                color: #336699;
-                font-weight: bold;
-                text-decoration: none;
-            }
-
-            .upgrade-msg a:hover {
-                text-decoration: underline;
-            }
-
-            .upgrade-msg .action {
-                padding-left: 65px;
-                background:url(img/flashplayer.gif) no-repeat left center;
-                line-height: 61px
-            }
-
-        </style>
         <base target="_self"/>
+
+        <!-- 依赖的js库 -->
+        <script src="http://style.china.alibaba.com/js/lib/fdev-v4/core/fdev-min.js"></script>
+        
+        <!-- flash上传相关的样式 -->
+        <link href="stylesheets/flash-upload.css" rel="stylesheet" type="text/css" />
+
     </head>
     <body>
-        <div id="flash-alt" style="">
 
+        <div id="flash-alt">
             <div class="upgrade-msg">使用普通上传需要最新版本 Flash Player 支持。<br/>您尚未安装或版本过低，建议您：
                 <p class="action"><a href="http://get.adobe.com/flashplayer" target="_blank">下载安装最新版本 Flash Player</a></p>
             </div>
         </div>
+
+        <script type="text/javascript" src="scripts/flash-upload.js"></script>
         <script>
-            jQuery(function($){
-
-                var uploader;
-
-                $.use('ui-flash', function(){
-
-                    if($.util.flash.version.major < 10){
-                        showFlashUpgradeMsg();
-                        return;
-                    }
-                    uploader = initUploader('#flash-alt');
-
-                    uploader.bind('swfReady', function(){
-                        var swf = getFlash();
-                        swf.setRequestCharset( 'utf-8' );
-                        swf.setResponseCharset( 'utf-8' );
-                        swf.setTargetAlbum({id: -1, remain:10});
-                    });
-
-                    uploader.bind('setWatermark', function(){
-                        alert('TODO: 设置水印');
-                    });
-
-                    /**
-                    * 用户点击了上传按钮,触发此事件
-                    */
-                    uploader.bind('clickUploadBtn', uploadAllFiles);
-
-                    /**
-                    * 图片已经上传到服务器，并收到服务器返回的数据
-                    * 对返回数据在这里进行处理，判断上传是否成功
-                    * 若上传不成功，需要更新错误提示
-                    */
-                    uploader.bind('transferCompleteData', checkFileByResponse );
-                        
-                    /**
-                    * 图片经过客户端处理后，没有被传输到服务器
-                    * 原因是处理完后，图片仍然没有达到限定的字节数之内
-                    * 因此传输取消
-                    */
-                    uploader.bind('transferAbort', function(evt, o){
-                        var file = o.file;
-                        updateFileMsg( file, getErrorMsg(file.msg) );
-                    });
-
-                    /**
-                    * 传输失败事件的处理，
-                    * 因为各种原因，网络传输有可能失败
-                    */
-                    uploader.bind('transferError', function(evt, o){
-                        updateFileMsg( o.file, getErrorMsg() );
-                    });
-
-                    /**
-                    * 所有文件都已经传输完毕
-                    * 有些文件的状态变化没有对应的事件，可以在这里统一处理
-                    */
-                    uploader.bind('finish', function(evt, o){});
-
-                    uploader.bind('skipToNextStep', function(evt, o){
-                        alert('TODO: skip to next step');
-                    });
-                        
-                });
-
-                function showFlashUpgradeMsg(container) {
-                    $('.upgrade-msg', container).show();
-                }
-
-                function initUploader(container) {
-                    var cont = $(container).empty();
-                    return cont.flash({
-                        swf: 'flash/picman-uploader.swf?v=2012041801',
-                        width: '100%',
-                        height: '100%',
-                        allowScriptAccess: 'always',
-                        flashvars: {
-                            eventHandler: 'jQuery.util.flash.triggerHandler',
-                            swfid: 'flash-alt',
-                            debug: true
-                        }
-                    });
-                }
-
-                function getFlash() {
-                    return uploader.flash('getFlash');
-                }
-
-                function uploadAllFiles() {
-                    var swf = getFlash();
-                    swf.uploadAll(
-                        'http://localhost:4567/random', {
-                            watermark: swf.shouldAddWatermark()
-                        }, 
-                        'FileData',  // 数据字段名称, 'imgFile' for ibank
-                        'fname'      // 如非必要,不要修改
-                    );
-                }
-                
-                function checkFileByResponse(evt, o){
-                    var file = o.file;
-                    var ret = getResultFromResponse( file.msg );
-                    var swf = getFlash();
-                    if(ret.success){
-                        swf.destroyFile( file.id );
-                        swf.updateFileList();
-                    } else {
-                        updateFileStatus( file.id, 'transfer_fail', ret.msg );
-
-                        // 当相册空间已满，剩下的图片都不再上传
-                        if( ret.err == 'maxImageSpaceExceed' || ret.err == 'maxImgPerAlbumExceeded' ){
-                            swf.dropRemainingFiles( ret.msg );
-                        }
-                    }
-                }
-
-                function getResultFromResponse( res ) {
-                    var obj={}, success, msg;
-
-                    try { obj = $.parseJSON(res); }
-                    catch(e) {}
-
-                    success = (obj.result === 'success');
-                    if( !success ){
-                        msg = getErrorMsg( obj.msg ); 
-                    }
-
-                    return { success: success, msg: msg, err: obj.msg };
-                }
-
-                function getErrorMsg( errCode ) {
-                    var map = {
-                        'COMPRESS_FAIL' : '无法压缩到2MB以内，请缩小后再上传',
-                        'notLogin'      : '您还未登录，无法上传图片！',
-                        'imgTooBig'     : '图片因大于2MB，无法上传!',
-                        'imgTypeErr'    : '图片格式不对，系统支持 jpg, jpeg, png, gif, bmp',
-                        'maxImageSpaceExceed'    : '相册总空间已满',
-                        'maxImgPerAlbumExceeded' : '目标相册已满，请更换上传相册继续上传'
-                    };
-                    
-                    return map[errCode] || '网络繁忙或其他原因，暂时无法上传，请稍后再试！';
-                }
-
-                function updateFileStatus( id, stt, msg ) {
-                    getFlash().updateFileStatus( id, stt, msg );
-                }
-
-                function updateFileMsg( file, msg ) {
-                    updateFileStatus( file.id, file.status, msg );
-                }
-
+            jQuery.use('ui-flash', function() {
+                initUploader('#flash-alt');
             });
         </script>
     </body>
