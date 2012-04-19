@@ -1,44 +1,48 @@
-jQuery(function($){
+jQuery.namespace('Picman.FlashUploader');
 
-    var uploader;
+(function($, window, PF, undefined){
 
-    function initUploader(container, swf) {
-        if($.util.flash.version.major < 10){
-            showFlashUpgradeMsg();
-        } else { 
-            swf = swf ||  'flash/picman-uploader.swf?v=2012041801'
-            var cont = $(container).empty();
-            uploader = cont.flash({
-                swf               : swf,
-                width             : '100%',
-                height            : '100%',
-                allowScriptAccess : 'always',
-                flashvars : {
-                    eventHandler  : 'jQuery.util.flash.triggerHandler',
-                    swfid         : 'flash-alt',
-                    debug         : true
-                }
-            });
+    var dfd = new $.Deferred();
 
-            initEventBindings();
-        }
-    }
-
-    function showFlashUpgradeMsg(container) {
-        $('.upgrade-msg', container).show();
-    }
-
-    function initEventBindings() {
-
-        uploader.bind('swfReady', function(){
-            var swf = getFlash();
-            swf.setRequestCharset( 'utf-8' );
-            swf.setResponseCharset( 'utf-8' );
-            swf.setTargetAlbum({id: -1, remain:10});
+    function initUploader(container) {
+        var cont = $(container || '.picman-flash-uploader:first');
+        $.use('ui-flash', function(){
+            if($.util.flash.version.major < 10){
+                dfd.reject();
+            } else { 
+                showFlash( cont );
+            }
         });
 
-        uploader.bind('setWatermark', function(){
-            alert('TODO: 设置水印');
+        return dfd;
+    }
+
+    function showFlash(container) {
+        var cont = $(container);
+        if(!cont.attr('id')) {
+            cont.attr('id', 'id' + $.guid++);
+        }
+        
+        var uploader = cont.flash({
+            swf               : cont.data('config-swf'),
+            width             : '100%',
+            height            : '100%',
+            allowScriptAccess : 'always',
+            flashvars : {
+                eventHandler  : 'jQuery.util.flash.triggerHandler',
+                swfid         : cont.attr('id'),
+                debug         : cont.data('debug')
+            }
+        });
+
+        PF.instance = uploader;
+        initEventBindings(uploader);
+    }
+
+    function initEventBindings(uploader) {
+
+        uploader.bind('swfReady', function(){
+            dfd.resolve(getFlash());
         });
 
         /**
@@ -70,31 +74,27 @@ jQuery(function($){
         uploader.bind('transferError', function(evt, o){
             updateFileMsg( o.file, getErrorMsg() );
         });
-
-        /**
-        * 所有文件都已经传输完毕
-        * 有些文件的状态变化没有对应的事件，可以在这里统一处理
-        */
-        uploader.bind('finish', function(evt, o){});
-
-        uploader.bind('skipToNextStep', function(evt, o){
-            alert('TODO: skip to next step');
-        });
     }
 
     function getFlash() {
-        return uploader.flash('getFlash');
+        return PF.instance.flash('getFlash');
     }
 
     function uploadAllFiles() {
         var swf = getFlash();
-        swf.uploadAll(
-            'http://localhost:4567/random', {
-                watermark: swf.shouldAddWatermark()
-            }, 
-            'FileData',  // 数据字段名称, 'imgFile' for ibank
-            'fname'      // 如非必要,不要修改
-        );
+        var o = PF.getUploadParams(swf);
+        swf.uploadAll( o.url, o.params, o.fieldName, o.identity || 'fname');
+    }
+
+    function getUploadParams(swf){
+        return {
+            url           : 'http://localhost:4567/random',
+            params : {
+                watermark : swf.shouldAddWatermark()
+            },
+            fieldName : 'FileData',
+            identity  : 'fname'
+        };
     }
     
     function checkFileByResponse(evt, o){
@@ -149,6 +149,24 @@ jQuery(function($){
         updateFileStatus( file.id, file.status, msg );
     }
 
-    window.initUploader = initUploader;
+    // ####################
+    //       APIS          
+    // ####################
+    $.extend(PF, {
+        /**
+         * 初始化
+         */
+        initUploader    : initUploader,
 
-});
+        /**
+         * 指定上传的目标和参数
+         */
+        getUploadParams : getUploadParams,
+
+        /**
+         * 获取Flash对象
+         */
+        getFlash        : getFlash
+    });
+
+})(jQuery, window, Picman.FlashUploader);

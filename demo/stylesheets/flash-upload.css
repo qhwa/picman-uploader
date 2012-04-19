@@ -1,4 +1,4 @@
-#flash-alt {
+.picman-flash-uploader {
     border         : 1px solid #ccc;
     width          : 482px;
     height         : 482px;
@@ -30,6 +30,6 @@
 
 .upgrade-msg .action {
     padding-left : 65px;
-    background   : url(img/flashplayer.gif) no-repeat left center;
+    background   : url(http://img.china.alibaba.com/cms/upload/2012/665/923/329566_150377317.gif) no-repeat left center;
     line-height  : 61px
 }

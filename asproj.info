@@ -15,8 +15,9 @@ library:
 #main: src/PicmanUploader.as
 main: /home/qhwa/workspace/lib/as_proj_nightly_builder/libraries/ccbu-trunk/cn/alibaba/product/picman/uploader/Main.mxml
 #main: src/ImageRotatingTest.as
+#main: src/CloudAlbumUploader.mxml
 
 output: 
   file: bin/picman-uploader.swf
-  width: 484
-  height: 484
+  width: 952
+  height: 500
