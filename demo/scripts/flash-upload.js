@@ -2,6 +2,41 @@ jQuery.namespace('Picman.FlashUploader');
 
 (function($, window, PF, undefined){
 
+    // ####################
+    //       APIS          
+    // ####################
+    $.extend(PF, {
+        /**
+         * 初始化
+         */
+        initUploader    : initUploader,
+
+        /**
+         * 指定上传的目标和参数
+         */
+        getUploadParams : getUploadParams,
+
+        /**
+         * 给定一段服务器返回的数据，返回处理后的结果
+         */
+        getResultFromResponse : getResultFromResponse,
+
+        /**
+         * 获取Flash对象
+         */
+        getFlash        : getFlash,
+
+        msgs: {
+            'COMPRESS_FAIL' : '无法压缩到2MB以内，请缩小后再上传',
+            'notLogin'      : '您还未登录，无法上传图片！',
+            'imgTooBig'     : '图片因大于2MB，无法上传!',
+            'imgTypeErr'    : '图片格式不对，系统支持 jpg, jpeg, png, gif, bmp',
+            'maxImageSpaceExceed'    : '相册总空间已满',
+            'maxImgPerAlbumExceeded' : '目标相册已满，请更换上传相册继续上传',
+            'unknown'       : '网络繁忙或其他原因，暂时无法上传，请稍后再试！'
+        }
+    });
+
     var dfd = new $.Deferred();
 
     function initUploader(container) {
@@ -88,7 +123,7 @@ jQuery.namespace('Picman.FlashUploader');
 
     function getUploadParams(swf){
         return {
-            url           : 'http://localhost:4567/random',
+            url       : 'http://localhost:4567/random',
             params : {
                 watermark : swf.shouldAddWatermark()
             },
@@ -97,7 +132,7 @@ jQuery.namespace('Picman.FlashUploader');
         };
     }
     
-    function checkFileByResponse(evt, o){
+    function checkFileByResponse(evt, o) {
         var file = o.file;
         var ret = getResultFromResponse( file.msg );
         var swf = getFlash();
@@ -108,7 +143,7 @@ jQuery.namespace('Picman.FlashUploader');
             updateFileStatus( file.id, 'transfer_fail', ret.msg );
 
             // 当相册空间已满，剩下的图片都不再上传
-            if( ret.err == 'maxImageSpaceExceed' || ret.err == 'maxImgPerAlbumExceeded' ){
+            if( ret.err == 'maxImageSpaceExceed' || ret.err == 'maxImgPerAlbumExceeded' ) {
                 swf.dropRemainingFiles( ret.msg );
             }
         }
@@ -129,16 +164,8 @@ jQuery.namespace('Picman.FlashUploader');
     }
 
     function getErrorMsg( errCode ) {
-        var map = {
-            'COMPRESS_FAIL' : '无法压缩到2MB以内，请缩小后再上传',
-            'notLogin'      : '您还未登录，无法上传图片！',
-            'imgTooBig'     : '图片因大于2MB，无法上传!',
-            'imgTypeErr'    : '图片格式不对，系统支持 jpg, jpeg, png, gif, bmp',
-            'maxImageSpaceExceed'    : '相册总空间已满',
-            'maxImgPerAlbumExceeded' : '目标相册已满，请更换上传相册继续上传'
-        };
-        
-        return map[errCode] || '网络繁忙或其他原因，暂时无法上传，请稍后再试！';
+        var msgs = PF.msgs;
+        return msgs[errCode] || msgs['unknown'];
     }
 
     function updateFileStatus( id, stt, msg ) {
@@ -148,25 +175,5 @@ jQuery.namespace('Picman.FlashUploader');
     function updateFileMsg( file, msg ) {
         updateFileStatus( file.id, file.status, msg );
     }
-
-    // ####################
-    //       APIS          
-    // ####################
-    $.extend(PF, {
-        /**
-         * 初始化
-         */
-        initUploader    : initUploader,
-
-        /**
-         * 指定上传的目标和参数
-         */
-        getUploadParams : getUploadParams,
-
-        /**
-         * 获取Flash对象
-         */
-        getFlash        : getFlash
-    });
 
 })(jQuery, window, Picman.FlashUploader);
