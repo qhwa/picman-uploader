@@ -63,6 +63,7 @@ jQuery.namespace('Picman.FlashUploader');
             width             : '100%',
             height            : '100%',
             allowScriptAccess : 'always',
+            wmode             : 'opaque',
             flashvars : {
                 eventHandler  : 'jQuery.util.flash.triggerHandler',
                 swfid         : cont.attr('id'),
