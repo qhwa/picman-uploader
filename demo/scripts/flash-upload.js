@@ -67,7 +67,7 @@ jQuery.namespace('Picman.FlashUploader');
             flashvars : {
                 eventHandler  : 'jQuery.util.flash.triggerHandler',
                 swfid         : cont.attr('id'),
-                debug         : cont.data('debug')
+                debug         : cont.data('config-debug')
             }
         });
 
