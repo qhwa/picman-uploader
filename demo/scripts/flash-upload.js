@@ -2,6 +2,9 @@ jQuery.namespace('Picman.FlashUploader');
 
 (function($, window, PF, undefined){
 
+    var dfd = new $.Deferred();
+    var succ = [], lastAlbum;
+
     // ####################
     //       APIS          
     // ####################
@@ -34,10 +37,16 @@ jQuery.namespace('Picman.FlashUploader');
             'maxImageSpaceExceed'    : '相册总空间已满',
             'maxImgPerAlbumExceeded' : '目标相册已满，请更换上传相册继续上传',
             'unknown'       : '网络繁忙或其他原因，暂时无法上传，请稍后再试！'
-        }
-    });
+        },
 
-    var dfd = new $.Deferred();
+        succ: succ,
+
+        setTargetAlbum: setTargetAlbum,
+
+        markFileAsSuccessful : markFileAsSuccessful,
+
+        _flashEventTrigger : flashEventTrigger
+    });
 
     function initUploader(container) {
         var cont = $(container || '.picman-flash-uploader:first');
@@ -65,7 +74,7 @@ jQuery.namespace('Picman.FlashUploader');
             allowScriptAccess : 'always',
             wmode             : 'opaque',
             flashvars : {
-                eventHandler  : 'jQuery.util.flash.triggerHandler',
+                eventHandler  : 'Picman.FlashUploader._flashEventTrigger',
                 swfid         : cont.attr('id'),
                 debug         : cont.data('config-debug')
             }
@@ -117,6 +126,7 @@ jQuery.namespace('Picman.FlashUploader');
     }
 
     function uploadAllFiles() {
+        succ.length = 0;
         var swf = getFlash();
         var o = PF.getUploadParams(swf);
         swf.uploadAll( o.url, o.params, o.fieldName, o.identity || 'fname');
@@ -138,8 +148,8 @@ jQuery.namespace('Picman.FlashUploader');
         var ret = getResultFromResponse( file.msg );
         var swf = getFlash();
         if(ret.success){
-            swf.destroyFile( file.id );
-            swf.updateFileList();
+
+            PF.markFileAsSuccessful( file.id );
         } else {
             updateFileStatus( file.id, 'transfer_fail', ret.msg );
 
@@ -169,12 +179,33 @@ jQuery.namespace('Picman.FlashUploader');
         return msgs[errCode] || msgs['unknown'];
     }
 
+    function setTargetAlbum( album ) {
+        var last = {id:lastAlbum.id, remain:lastAlbum.remain};
+        lastAlbum = album;
+
+        if( last.id != lastAlbum.id ) {
+            succ.length = 0;
+        }
+        getFlash().setTargetAlbum(album);
+    }
+
+    function markFileAsSuccessful( id ) {
+        var swf = getFlash();
+        succ.push( id );
+        swf.destroyFile( id );
+        swf.updateFileList();
+    }
+
     function updateFileStatus( id, stt, msg ) {
         getFlash().updateFileStatus( id, stt, msg );
     }
 
     function updateFileMsg( file, msg ) {
         updateFileStatus( file.id, file.status, msg );
+    }
+
+    function flashEventTrigger(evt) {
+        jQuery.util.flash.triggerHandler.apply(null, arguments);
     }
 
 })(jQuery, window, Picman.FlashUploader);

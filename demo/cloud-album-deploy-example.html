@@ -69,6 +69,11 @@
                      */
                     function bindEvents(uploader) {
 
+                        uploader.on('clickUploadBtn', function(){
+                            //TODO: get album id from HTML select
+                            PU.setTargetAlbum({id:-1});
+                        });
+
                         uploader.on('processStart', function(){
                             console.log('TODO: 进入上传流程，阻止用户关闭当前窗口');
                         });
