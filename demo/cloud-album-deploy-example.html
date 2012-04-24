@@ -27,7 +27,7 @@
     </head>
     <body>
 
-        <div class="picman-flash-uploader" data-config-swf="flash/cloud-album-uploader.swf?v=20120419" data-config-debug="true">
+        <div class="picman-flash-uploader" data-config-swf="flash/cloud-album-uploader.swf?v=20120424" data-config-debug="true">
             <div class="upgrade-msg">使用普通上传需要最新版本 Flash Player 支持。<br/>您尚未安装或版本过低，建议您：
                 <p class="action"><a href="http://get.adobe.com/flashplayer" target="_blank">下载安装最新版本 Flash Player</a></p>
             </div>
@@ -50,6 +50,7 @@
                         swf.setRequestCharset( 'utf-8' );   // 生产环境一般是gbk
                         swf.setResponseCharset( 'utf-8' );  // 生产环境一般是gbk
                         swf.setTargetAlbum({remain:10});    // 目前在flash中只用到remain
+                        swf.setFileSizeLimitOnUserSelect( 1*1024*1024 );
 
                         bindEvents(PF.instance);
 
