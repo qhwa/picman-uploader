@@ -17,11 +17,6 @@
             body {
                 background: #fff;
             }
-
-            .picman-flash-uploader {
-                width: 952px;
-                height: 500px;
-            }
         </style>
 
     </head>
@@ -42,8 +37,8 @@
 
                         swf.setRequestCharset( 'utf-8' );   // 生产环境一般是gbk
                         swf.setResponseCharset( 'utf-8' );  // 生产环境一般是gbk
-                        swf.setTargetAlbum({remain:10});    // 目前在flash中只用到remain
-                        swf.setFileSizeLimitOnUserSelect( 1*1024*1024 );
+                        swf.setTargetAlbum({remain:10});    // 目前在flash中只用到remain, remain是当前相册的剩余空间（张数）
+                        swf.setFileSizeLimitOnUserSelect( 50*1024*1024 );
 
                         bindEvents(PF.instance);
 
@@ -63,6 +58,13 @@
                      */
                     function bindEvents(uploader) {
 
+                        uploader.on('swfReady', function(){
+                            //最多一次上传150张
+                            //这个数字和相册剩余空间一起决定能上传
+                            //多少张。取两者最小值。
+                            uploader.setFileCountLimit(150);
+                        });
+
                         uploader.on('clickUploadBtn', function(){
                             //TODO: get album id from HTML select
                             PU.setTargetAlbum({id:-1});
@@ -72,20 +74,20 @@
                             console.log('TODO: 进入上传流程，阻止用户关闭当前窗口');
                         });
 
+                        uploader.on('transferCompleteData', function(){
+                            console.log('（单个）文件传输完成', arguments);
+                        });
+
                         uploader.on('finish', function(){
                             console.log('TODO: 文件上传完毕，取消阻止关闭窗口');
                         });
 
-                        uploader.on('setWatermark', function(){
-                            alert('TODO: 在弹出框中设置水印');
+                        uploader.on('clickOKBtn', function(){
+                            alert('点击确定按钮');
                         });
 
-                        uploader.on('skipToNextStep', function(){
-                            alert('TODO: 跳到下一步');
-                        });
-
-                        uploader.on('allUploaded', function(){
-                            alert('TODO: 全部成功，自动进入成功界面');
+                        uploader.on('clickCancelBtn', function(){
+                            alert('点击取消按钮');
                         });
 
                         uploader.on('setCompressOn', function(){
@@ -105,14 +107,35 @@
 
                     PF.getUploadParams = function(swf) {
                         return {
-                            url       : 'http://localhost:4567/random',
+                            url       : 'http://i.shijiebang.net/wiki/pages/viewpage.action?pageId=1966085',
                             params : {
-                                watermark : swf.shouldAddWatermark(),
-                                albumId   : -1 //TODO: 改为真实的相册id
+                                _z        : document.cookie,
+                                type      : null,    //封面？
+                                album     : null     //相册id
                             },
-                            fieldName : 'FileData',
+                            fieldName : 'imgFile',
                             identity  : 'fname'
                         };
+                    };
+
+                    //解析后台返回的数据
+                    PF.getResultFromResponse = function(res) {
+                        var obj={}, success, msg;
+
+                        try { obj = $.parseJSON(res); }
+                        catch(e) {}
+
+                        success = (obj.msg === 'success');
+                        if( !success ){
+                            msg = getErrorMsg( obj.code ); 
+                        }
+
+                        function getErrorMsg( errCode ) {
+                            var msgs = PF.msgs;
+                            return msgs[errCode] || msgs['unknown'];
+                        }
+
+                        return { success: success, msg: msg, err: obj.msg };
                     };
 
                 });
