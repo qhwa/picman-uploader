@@ -19,5 +19,5 @@ main: /home/qhwa/workspace/lib/as_proj_nightly_builder/libraries/ccbu-trunk/cn/a
 
 output: 
   file: bin/cloud-album-uploader.swf
-  width: 952
-  height: 500
+  width: 570
+  height: 480
