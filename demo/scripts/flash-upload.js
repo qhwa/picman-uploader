@@ -145,7 +145,7 @@ jQuery.namespace('Picman.FlashUploader');
     
     function checkFileByResponse(evt, o) {
         var file = o.file;
-        var ret = getResultFromResponse( file.msg );
+        var ret = PF.getResultFromResponse( file.msg );
         var swf = getFlash();
         if(ret.success){
 

@@ -40,6 +40,17 @@
                         swf.setTargetAlbum({remain:10});    // 目前在flash中只用到remain, remain是当前相册的剩余空间（张数）
                         swf.setFileSizeLimitOnUserSelect( 50*1024*1024 );
 
+                        //5M以上，50M以下的图片，才会进行缩小
+                        swf.setFileSizeLimitOnMinify( 5*1024*1024 );
+                        //缩小到2000x2000像素之内再上传
+                        swf.setMinifyTargetWidth(2000);
+                        swf.setMinifyTargetHeight(2000);
+
+                        //最多一次上传150张
+                        //这个数字和相册剩余空间一起决定能上传
+                        //多少张。取两者最小值。
+                        swf.setFileCountLimit(150);
+
                         bindEvents(PF.instance);
 
                     }).fail(function() {
@@ -58,13 +69,6 @@
                      */
                     function bindEvents(uploader) {
 
-                        uploader.on('swfReady', function(){
-                            //最多一次上传150张
-                            //这个数字和相册剩余空间一起决定能上传
-                            //多少张。取两者最小值。
-                            uploader.setFileCountLimit(150);
-                        });
-
                         uploader.on('clickUploadBtn', function(){
                             //TODO: get album id from HTML select
                             PU.setTargetAlbum({id:-1});
@@ -75,7 +79,6 @@
                         });
 
                         uploader.on('transferCompleteData', function(){
-                            console.log('（单个）文件传输完成', arguments);
                         });
 
                         uploader.on('finish', function(){
@@ -107,7 +110,7 @@
 
                     PF.getUploadParams = function(swf) {
                         return {
-                            url       : 'http://i.shijiebang.net/wiki/pages/viewpage.action?pageId=1966085',
+                            url       : 'http://localhost:4567/',
                             params : {
                                 _z        : document.cookie,
                                 type      : null,    //封面？
@@ -120,6 +123,7 @@
 
                     //解析后台返回的数据
                     PF.getResultFromResponse = function(res) {
+                        console.log('（单个）文件传输完成', arguments);
                         var obj={}, success, msg;
 
                         try { obj = $.parseJSON(res); }

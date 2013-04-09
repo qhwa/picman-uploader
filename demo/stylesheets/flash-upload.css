@@ -1,5 +1,5 @@
 .picman-flash-uploader {
-    border         : 1px solid #ccc;
+    border-top     : 1px solid #ccc;
     width          : 482px;
     height         : 482px;
     display        : table-cell;
